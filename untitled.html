@@ -1,0 +1,3080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korea Population Simulator - Enhanced Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            overflow: hidden;
+            user-select: none;
+            color: #E2E8F0;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            min-width: 280px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        #controls.collapsed {
+            min-width: auto;
+            backdrop-filter: blur(10px);
+        }
+        
+        #controls.collapsed #controlsHeader {
+            padding: 8px 10px;
+            background: none;
+            border: none;
+        }
+        
+        #controls.collapsed h3 {
+            display: none;
+        }
+        
+        #controls.collapsed #toggleButton {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            font-size: 12px;
+        }
+        
+        #controls.collapsed .info-box {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            margin: 8px;
+        }
+        
+        #controls.collapsed .age-group {
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.02);
+        }
+        
+        #controls.collapsed .age-group:hover {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.03);
+        }
+        
+        #controls.collapsed .info-box-title {
+            color: #FFFFFF;
+            opacity: 1;
+        }
+        
+        #controls.collapsed .age-group .label {
+            opacity: 1;
+        }
+        
+        #controls.collapsed .age-group[data-age-group="baby"] .label { color: #90EE90; }
+        #controls.collapsed .age-group[data-age-group="child"] .label { color: #3CB371; }
+        #controls.collapsed .age-group[data-age-group="young"] .label { color: #2E7D32; }
+        #controls.collapsed .age-group[data-age-group="middle"] .label { color: #1B5E20; }
+        #controls.collapsed .age-group[data-age-group="elderly"] .label { color: #8B4513; }
+        
+        #controlsHeader {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        #controlsContent {
+            padding: 16px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        #controlsContent.collapsed {
+            padding: 0 16px;
+        }
+        
+        #controls.collapsed {
+            background: rgba(15, 23, 42, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        #toggleButton {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #E2E8F0;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #toggleButton:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+        
+        #viewControls {
+            padding: 0 16px 12px;
+        }
+        
+        #formationControls {
+            padding: 0 16px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        #controls.collapsed {
+            background: transparent;
+            backdrop-filter: none;
+            border: none;
+            box-shadow: none;
+        }
+        
+        #controls.collapsed #controlsHeader {
+            padding: 8px 10px;
+            background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        
+        #controls.collapsed h3 {
+            display: none;
+        }
+        
+        #controls.collapsed #toggleButton {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            font-size: 12px;
+        }
+        
+        #controls.collapsed #formationControls {
+            display: block;
+            padding: 8px;
+        }
+        
+        #controls.collapsed .formation-btn {
+            padding: 8px;
+            font-size: 12px;
+            background: rgba(59, 130, 246, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        
+        #controls.collapsed #yearControls,
+        #controls.collapsed #viewControls,
+        #controls.collapsed .fertility-controls {
+            display: none;
+        }
+        
+        .formation-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60A5FA;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .formation-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .formation-btn.active {
+            background: rgba(59, 130, 246, 0.3);
+            color: #93BBFC;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .view-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94A3B8;
+            margin-bottom: 8px;
+        }
+        
+        .view-buttons {
+            display: flex;
+            gap: 4px;
+            padding: 3px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+        
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: #94A3B8;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .view-btn.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60A5FA;
+        }
+        
+        .view-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+            color: #E2E8F0;
+        }
+        
+        #yearControls {
+            padding: 12px 16px;
+        }
+        
+        .year-display {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        
+        .current-year {
+            font-size: 28px;
+            font-weight: 700;
+            color: #22c55e;
+            text-align: center;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        
+        .year-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94A3B8;
+        }
+        
+        .year-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        
+        .play-btn {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #60A5FA;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .play-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .play-btn.playing {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #F87171;
+        }
+        
+        #yearSlider {
+            flex: 1;
+            margin: 0;
+            height: 6px;
+            appearance: none;
+            background: linear-gradient(90deg, #22c55e, #ef4444);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        #yearSlider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 2px solid #000;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #94A3B8;
+            margin-top: 4px;
+        }
+        
+        .slider-label-mid {
+            color: #64748B;
+            font-style: italic;
+        }
+        
+        .fertility-controls {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .control-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .fertility-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #22c55e;
+        }
+        
+        .fertility-presets {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+        
+        .preset-btn {
+            flex: 1;
+            padding: 8px 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94A3B8;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .preset-btn.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #60A5FA;
+        }
+        
+        .preset-value {
+            font-size: 10px;
+        }
+        
+        .preset-rate {
+            font-size: 12px;
+            font-weight: 700;
+        }
+        
+        .slider-wrapper {
+            position: relative;
+            margin: 12px 0;
+        }
+        
+        #fertilitySlider {
+            width: 100%;
+            height: 6px;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        #fertilitySlider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #22c55e;
+            border: 2px solid #1E293B;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .slider-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            pointer-events: none;
+        }
+        
+        .slider-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .replacement-marker {
+            position: absolute;
+            top: -2px;
+            width: 2px;
+            height: 10px;
+            background: #3B82F6;
+            border-radius: 1px;
+        }
+                
+        .age-label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            pointer-events: none;
+            z-index: 10;
+            text-align: center;
+            min-width: 28px;
+            font-family: 'Inter', sans-serif;
+            backdrop-filter: blur(4px);
+            transform-origin: center bottom;
+        }
+        
+        .age-label.baby { background: rgba(144, 238, 144, 0.95); }
+        .age-label.child { background: rgba(60, 179, 113, 0.95); }
+        .age-label.young { background: rgba(46, 125, 50, 0.95); }
+        .age-label.middle { background: rgba(33, 90, 33, 0.95); }
+        .age-label.elderly { background: rgba(139, 69, 19, 0.95); }
+        
+        .age-label.highlighted {
+            background: rgba(255, 255, 0, 0.95) !important;
+            color: #000 !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            padding: 6px 12px !important;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.8) !important;
+            z-index: 20 !important;
+        }
+        
+        .age-label.person-highlighted {
+            background: rgba(255, 255, 100, 0.95) !important;
+            color: #000 !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            padding: 5px 10px !important;
+            box-shadow: 0 0 15px rgba(255, 255, 100, 0.6) !important;
+            z-index: 18 !important;
+            border: 1px solid rgba(255, 255, 0, 0.8) !important;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            color: #E2E8F0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 24px;
+            border-radius: 16px;
+            font-size: 13px;
+            max-width: 320px;
+            line-height: 1.6;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        #instructions strong {
+            color: #F1F5F9;
+            font-weight: 600;
+        }
+        
+        .control-key {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 28px;
+            margin: 0 2px;
+        }
+        
+        #stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            border-radius: 16px;
+            color: white;
+            font-size: 12px;
+            min-width: 180px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        #stats.collapsed {
+            background: rgba(15, 23, 42, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px;
+            min-width: auto;
+            border: none;
+            box-shadow: none;
+        }
+        
+        #stats.collapsed h3 {
+            font-size: 10px;
+            margin: 0;
+            text-align: center;
+        }
+        
+        #stats.collapsed .stats-grid,
+        #stats.collapsed .society-badge {
+            display: none;
+        }
+        
+        #statsToggle {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #E2E8F0;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #statsToggle:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+        
+        .stats-grid {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #94A3B8;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #22c55e;
+        }
+        
+        .society-badge {
+            text-align: center;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #F87171;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        h3 {
+            margin: 0 0 12px 0;
+            color: #E2E8F0;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        label {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            font-size: 12px;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0F172A;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #E2E8F0;
+            font-size: 18px;
+            gap: 24px;
+        }
+        
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(59, 130, 246, 0.2);
+            border-top-color: #3B82F6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        #yearFloater {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            z-index: 99;
+            display: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        #yearFloater.visible.collapsed {
+            background: rgba(15, 23, 42, 0.2);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 16px;
+        }
+        
+        #yearFloater.visible.collapsed .floater-year {
+            font-size: 20px;
+        }
+        
+        #yearFloater.visible.collapsed .floater-play-btn {
+            width: 28px;
+            height: 28px;
+            font-size: 12px;
+        }
+        
+        #yearFloater.visible.collapsed #yearFloaterSlider {
+            width: 150px;
+            height: 3px;
+        }
+        
+        #yearFloater.visible {
+            display: block;
+        }
+        
+        .floater-year {
+            font-size: 28px;
+            font-weight: 700;
+            color: #22c55e;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .floater-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .floater-play-btn {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #60A5FA;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .floater-play-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .floater-play-btn.playing {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #F87171;
+        }
+        
+        #yearFloaterSlider {
+            width: 200px;
+            margin: 0;
+            height: 4px;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        #yearFloaterSlider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            border: 2px solid #1E293B;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .group-info-bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            color: #1F2937;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            pointer-events: none;
+            z-index: 15;
+            text-align: center;
+            min-width: 90px;
+            font-family: 'Inter', sans-serif;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+            border: 1.5px solid rgba(255, 255, 255, 0.8);
+            display: none;
+        }
+        
+        .group-info-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid rgba(255, 255, 255, 0.95);
+        }
+        
+        .group-info-bubble.baby { border-color: #90EE90; }
+        .group-info-bubble.child { border-color: #228B22; }
+        .group-info-bubble.young { border-color: #3CB371; }
+        .group-info-bubble.middle { border-color: #2E7D32; }
+        .group-info-bubble.elderly { border-color: #D2691E; }
+        
+        .group-name {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        
+        .group-stats {
+            font-size: 11px;
+            font-weight: 500;
+            color: #4B5563;
+        }
+        
+        #speedSlider {
+            width: 120px;
+            height: 4px;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        #speedSlider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #3B82F6;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        #speedSlider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #60A5FA;
+        }
+        
+        .panel-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #94A3B8;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+        
+        .panel-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #E2E8F0;
+        }
+        
+        #speedControl {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 12px;
+            min-width: 180px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Age Distribution Panel Styles --- */
+        .age-distribution-panel {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 23, 42, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            width: 280px;
+            z-index: 100;
+            display: none; /* Hidden by default */
+            transition: all 0.3s;
+        }
+        .age-distribution-panel.active {
+            display: block; /* Made visible by adding .active class */
+        }
+        .age-distribution-panel .age-group {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-weight: 500;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px solid transparent;
+            font-size: 12px;
+        }
+        .age-distribution-panel .age-group:hover {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.05);
+            transform: translateX(2px);
+        }
+        .age-distribution-panel .age-group .label {
+            color: rgba(226, 232, 240, 0.7);
+            font-size: 11px;
+            font-weight: 400;
+        }
+        .age-distribution-panel .age-group .percentage {
+            font-weight: 600;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .age-distribution-panel .age-group[data-age-group="baby"] .percentage { color: #90EE90; }
+        .age-distribution-panel .age-group[data-age-group="child"] .percentage { color: #3CB371; }
+        .age-distribution-panel .age-group[data-age-group="young"] .percentage { color: #2E7D32; }
+        .age-distribution-panel .age-group[data-age-group="middle"] .percentage { color: #1B5E20; }
+        .age-distribution-panel .age-group[data-age-group="elderly"] .percentage { color: #8B4513; }
+
+        .age-distribution-panel .age-bar {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            margin: -2px 12px 0 12px;
+            overflow: hidden;
+        }
+        .age-distribution-panel .age-bar-fill {
+            height: 100%;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+            opacity: 0.6;
+        }
+        #babiesBar { background: linear-gradient(90deg, #90EE90, #7CFC00); }
+        #childrenBar { background: linear-gradient(90deg, #3CB371, #2E7D32); }
+        #youngBar { background: linear-gradient(90deg, #2E7D32, #228B22); }
+        #middleBar { background: linear-gradient(90deg, #1B5E20, #0D4F0D); }
+        #elderlyBar { background: linear-gradient(90deg, #8B4513, #654321); }
+
+        .age-distribution-panel .panel-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            transition: all 0.2s;
+        }
+        .age-distribution-panel .panel-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+        }
+        @media (max-width: 768px) {
+            .age-distribution-panel {
+                right: auto;
+                left: 50%;
+                top: auto;
+                bottom: 20px;
+                transform: translateX(-50%);
+                width: calc(100% - 40px);
+                max-width: 320px;
+            }
+        }
+
+
+#toggleAgeDistPanelBtn {
+    position: absolute;
+    top: 4px;
+    left: 4px; /* Live Statistics 패널 좌측 상단에 위치 */
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #60A5FA;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+#toggleAgeDistPanelBtn:hover {
+    background: rgba(59, 130, 246, 0.3);
+    transform: scale(1.05);
+}
+
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loading-spinner"></div>
+        <div>Loading Korea Population Simulator...</div>
+    </div>
+    <div id="container"></div>
+    
+    <div id="yearFloater">
+        <div class="floater-controls">
+            <div class="floater-year" id="floaterYear">2025</div>
+            <button class="floater-play-btn" id="floaterPlayBtn" title="Auto Play">▶</button>
+        </div>
+        <input type="range" id="yearFloaterSlider" min="1960" max="2070" value="2025" step="5">
+    </div>
+    
+    <div id="controls">
+        <div id="controlsHeader">
+            <h3>Population Simulator</h3>
+            <button id="toggleButton">◀</button>
+        </div>
+        
+        <div id="viewControls">
+            <div class="view-label">Camera View</div>
+            <div class="view-buttons">
+                <button class="view-btn active" data-view="child"><span>👶</span> Child</button>
+                <button class="view-btn" data-view="adult"><span>👨</span> Adult</button>
+                <button class="view-btn" data-view="bird"><span>🦅</span> Sky</button>
+            </div>
+        </div>
+        
+        <div id="formationControls">
+            <button class="formation-btn" id="formationBtn">
+                <span>📊</span> Form Age Chart
+            </button>
+        </div>
+        
+        <div id="controlsContent">
+            <div id="yearControls">
+                <div class="year-display">
+                    <div class="current-year" id="currentYear">2025</div>
+                    <div class="year-label">Year</div>
+                </div>
+                
+                <div class="year-slider-container">
+                    <input type="range" id="yearSlider" min="1960" max="2070" value="2025" step="5">
+                    <button class="play-btn" id="playBtn" title="Auto Play">▶</button>
+                </div>
+                <div class="slider-labels">
+                    <span>1960</span>
+                    <span>2070</span>
+                </div>
+                
+                <div class="fertility-controls">
+                    <div class="control-section-header">
+                        <span class="view-label">Fertility Rate</span>
+                        <span class="fertility-value" id="fertilityRate">0.8</span>
+                    </div>
+                    
+                    <div class="fertility-presets">
+                        <button class="preset-btn active" data-scenario="current" title="Current Rate">
+                            <span class="preset-value">Current</span>
+                            <span class="preset-rate" id="currentPresetRate">0.8</span>
+                        </button>
+                        <button class="preset-btn" data-scenario="replacement" title="Replacement Level">
+                            <span class="preset-value">Replace</span>
+                            <span class="preset-rate">2.1</span>
+                        </button>
+                        <button class="preset-btn" data-scenario="high" title="High Fertility">
+                            <span class="preset-value">High</span>
+                            <span class="preset-rate">3.0</span>
+                        </button>
+                    </div>
+                    
+                    <div class="slider-wrapper">
+                        <input type="range" id="fertilitySlider" min="0.5" max="4.0" value="0.8" step="0.1">
+                        <div class="slider-track">
+                            <div class="slider-fill" id="fertilitySliderFill"></div>
+                            <div class="replacement-marker" style="left: 45.7%;" title="Replacement Level (2.1)"></div>
+                        </div>
+                    </div>
+                    <div class="slider-labels">
+                        <span>0.5</span>
+                        <span class="slider-label-mid">births per woman</span>
+                        <span>4.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="ageDistribution" class="age-distribution-panel">
+        <h3 style="color: white; margin-bottom: 16px; font-size: 14px;">Age Distribution</h3>
+        <div class="age-group" data-age-group="baby">
+            <span class="label">Babies (0-5)</span>
+            <span class="percentage" id="babiesPercent">3.5%</span>
+        </div>
+        <div class="age-bar">
+            <div class="age-bar-fill" id="babiesBar" style="width: 3.5%"></div>
+        </div>
+        
+        <div class="age-group" data-age-group="child">
+            <span class="label">Children (6-14)</span>
+            <span class="percentage" id="childrenPercent">7.3%</span>
+        </div>
+        <div class="age-bar">
+            <div class="age-bar-fill" id="childrenBar" style="width: 7.3%"></div>
+        </div>
+        
+        <div class="age-group" data-age-group="young">
+            <span class="label">Youth (15-24)</span>
+            <span class="percentage" id="youngPercent">9.5%</span>
+        </div>
+        <div class="age-bar">
+            <div class="age-bar-fill" id="youngBar" style="width: 9.5%"></div>
+        </div>
+        
+        <div class="age-group" data-age-group="middle">
+            <span class="label">Adults (25-64)</span>
+            <span class="percentage" id="middlePercent">59.3%</span>
+        </div>
+        <div class="age-bar">
+            <div class="age-bar-fill" id="middleBar" style="width: 59.3%"></div>
+        </div>
+        
+        <div class="age-group" data-age-group="elderly">
+            <span class="label">Elders (65+)</span>
+            <span class="percentage" id="elderlyPercent">20.4%</span>
+        </div>
+        <div class="age-bar">
+            <div class="age-bar-fill" id="elderlyBar" style="width: 20.4%"></div>
+        </div>
+    </div>
+
+    <div id="stats">
+        <button id="statsToggle">◀</button>
+    <button id="toggleAgeDistPanelBtn" title="Toggle Age Distribution">📊</button>
+        <h3>Live Statistics</h3>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Population</div>
+                <div class="stat-value" id="totalPop">51.4M</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Median Age</div>
+                <div class="stat-value" id="medianAge">45.7</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Dependency</div>
+                <div class="stat-value" id="depRatio">68.9%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Workforce</div>
+                <div class="stat-value" id="workforceRatio">68.8%</div>
+            </div>
+        </div>
+        <div class="society-badge" id="societyType">Super-aged Society</div>
+    </div>
+    
+    <div id="instructions">
+        <button class="panel-close" onclick="this.parentElement.style.display='none'">×</button>
+        <strong>Controls</strong><br>
+        • <span class="control-key">W</span><span class="control-key">A</span><span class="control-key">S</span><span class="control-key">D</span> Move<br>
+        • <span class="control-key">Space</span> Jump<br>
+        • <span class="control-key">Shift</span> Sprint<br>
+        • <strong>Mouse</strong> Look around<br>
+        • <strong>Scroll</strong> Zoom<br><br>
+        <strong>Tips</strong><br>
+        • Hover age groups to highlight<br>
+        • Watch trees grow over time<br>
+        • 60% follow the main path
+    </div>
+    
+    <div id="speedControl">
+        <button class="panel-close" onclick="this.parentElement.style.display='none'">×</button>
+        <label>Speed</label>
+        <input type="range" id="speedSlider" min="0" max="2" value="1" step="0.1">
+    </div>
+
+    <script>
+        // Initialize slider fill on load
+        setTimeout(() => {
+            const initialRate = 0.8;
+            const percentage = ((initialRate - 0.5) / (4.0 - 0.5)) * 100;
+            const sliderFill = document.getElementById('fertilitySliderFill');
+            if (sliderFill) {
+                sliderFill.style.width = percentage + '%';
+            }
+        }, 100);
+
+        // Population data with enhanced statistics
+        const populationData = {
+            1960: { babies: 18.4, children: 24.0, young: 17.1, middle: 37.2, elderly: 3.3, total: 25.01, medianAge: 19.0, fertilityRate: 6.0 },
+            1965: { babies: 17.2, children: 25.5, young: 17.9, middle: 36.7, elderly: 2.7, total: 28.70, medianAge: 18.7, fertilityRate: 5.0 },
+            1970: { babies: 14.5, children: 26.1, young: 19.3, middle: 37.3, elderly: 2.8, total: 32.24, medianAge: 18.5, fertilityRate: 4.5 },
+            1975: { babies: 13.1, children: 22.0, young: 22.5, middle: 39.3, elderly: 3.1, total: 35.28, medianAge: 21.2, fertilityRate: 3.4 },
+            1980: { babies: 11.2, children: 18.7, young: 20.3, middle: 46.1, elderly: 3.7, total: 38.12, medianAge: 24.9, fertilityRate: 2.8 },
+            1985: { babies: 10.1, children: 15.9, young: 18.8, middle: 50.8, elderly: 4.4, total: 40.81, medianAge: 26.5, fertilityRate: 1.7 },
+            1990: { babies: 9.2, children: 14.1, young: 18.3, middle: 53.2, elderly: 5.2, total: 42.87, medianAge: 28.0, fertilityRate: 1.6 },
+            1995: { babies: 8.5, children: 12.8, young: 16.5, middle: 56.1, elderly: 6.1, total: 45.09, medianAge: 31.8, fertilityRate: 1.6 },
+            2000: { babies: 8.0, children: 11.3, young: 17.0, middle: 56.8, elderly: 6.9, total: 47.01, medianAge: 31.8, fertilityRate: 1.5 },
+            2005: { babies: 5.5, children: 11.5, young: 17.3, middle: 56.2, elderly: 9.5, total: 48.14, medianAge: 34.8, fertilityRate: 1.1 },
+            2010: { babies: 5.0, children: 10.9, young: 15.9, middle: 56.6, elderly: 11.6, total: 49.41, medianAge: 38.2, fertilityRate: 1.2 },
+            2015: { babies: 4.8, children: 8.8, young: 13.8, middle: 58.3, elderly: 14.3, total: 51.01, medianAge: 41.2, fertilityRate: 1.2 },
+            2020: { babies: 3.6, children: 8.3, young: 12.2, middle: 59.5, elderly: 16.4, total: 51.78, medianAge: 44.5, fertilityRate: 0.9 },
+            2025: { babies: 3.5, children: 7.3, young: 9.5, middle: 59.3, elderly: 20.4, total: 51.42, medianAge: 45.7, fertilityRate: 0.8 },
+            2030: { babies: 3.3, children: 6.5, young: 8.5, middle: 56.8, elderly: 24.9, total: 51.04, medianAge: 48.5, fertilityRate: 0.7 },
+            2035: { babies: 3.5, children: 5.8, young: 8.0, middle: 53.6, elderly: 29.1, total: 50.17, medianAge: 51.2, fertilityRate: 0.7 },
+            2040: { babies: 3.6, children: 5.3, young: 7.8, middle: 49.6, elderly: 33.7, total: 48.81, medianAge: 53.9, fertilityRate: 0.7 },
+            2045: { babies: 3.6, children: 5.0, young: 7.5, middle: 46.1, elderly: 37.8, total: 46.74, medianAge: 56.4, fertilityRate: 0.7 },
+            2050: { babies: 3.4, children: 4.8, young: 7.1, middle: 43.4, elderly: 41.3, total: 44.68, medianAge: 58.9, fertilityRate: 0.7 },
+            2055: { babies: 3.2, children: 4.6, young: 6.8, middle: 41.7, elderly: 43.7, total: 42.44, medianAge: 61.1, fertilityRate: 0.7 },
+            2060: { babies: 3.0, children: 4.4, young: 6.5, middle: 40.8, elderly: 45.3, total: 40.06, medianAge: 62.9, fertilityRate: 0.7 },
+            2065: { babies: 2.8, children: 4.1, young: 6.2, middle: 40.2, elderly: 46.7, total: 37.65, medianAge: 64.5, fertilityRate: 0.7 },
+            2070: { babies: 2.6, children: 3.9, young: 5.9, middle: 39.5, elderly: 48.1, total: 35.39, medianAge: 65.8, fertilityRate: 0.7 }
+        };
+
+        // Scene variables
+        let scene, camera, renderer, people = [], trees = [], buildings = [];
+        let currentYear = 2025;
+        let ageLabels = [];
+        let currentView = 'child';
+        let fallingLeaves = [];
+        let animationSpeed = 1;
+        let buildingWindows = [];
+        let buildingSigns = [];
+        let highlightedAgeGroup = null;
+        let currentFertilityRate = 0.8;
+        let fertilityScenario = 'current';
+        let isFormationMode = false;
+        let formationAnimating = false;
+        let groupInfoBubbles = [];
+        let isPlaying = false;
+        let playInterval = null;
+        
+        // Controls
+        const keys = { w: false, a: false, s: false, d: false, shift: false, space: false };
+        let moveSpeed = 0.05;
+        let isJumping = false;
+        let jumpVelocity = 0;
+        const gravity = -0.015;
+        const jumpPower = 0.25;
+        
+        // Animation
+        let time = 0;
+        const clock = new THREE.Clock();
+
+        function init() {
+            console.log('Initializing enhanced version...');
+            
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x87CEEB, 50, 200);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            setView('child');
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            directionalLight.position.set(100, 200, 100);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 500;
+            directionalLight.shadow.camera.left = -50;
+            directionalLight.shadow.camera.right = 50;
+            directionalLight.shadow.camera.top = 50;
+            directionalLight.shadow.camera.bottom = -50;
+            scene.add(directionalLight);
+
+            updateSkyColor();
+
+            createModernCity();
+            createPeople();
+            setupControls();
+            
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+            }, 500);
+            
+            animate();
+        }
+
+        function updateSkyColor() {
+            const yearProgress = (currentYear - 1960) / (2070 - 1960);
+            
+            let skyColor;
+            if (yearProgress < 0.3) {
+                skyColor = new THREE.Color(0x87CEEB);
+            } else if (yearProgress < 0.6) {
+                skyColor = new THREE.Color(0x7A9CC6);
+            } else {
+                skyColor = new THREE.Color(0x6B8AAD);
+            }
+            
+            scene.background = skyColor;
+            scene.fog.color = skyColor;
+        }
+
+        function createTexture(color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+            ctx.fillRect(0, 0, 64, 64);
+            
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * 64;
+                const y = Math.random() * 64;
+                const brightness = Math.random() * 20 - 10;
+                const r = Math.max(0, Math.min(255, (color >> 16) + brightness));
+                const g = Math.max(0, Math.min(255, ((color >> 8) & 0xFF) + brightness));
+                const b = Math.max(0, Math.min(255, (color & 0xFF) + brightness));
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                ctx.fillRect(x, y, 1, 1);
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            return texture;
+        }
+
+        function createModernCity() {
+            const groundTexture = createTexture(0x90EE90);
+            groundTexture.repeat.set(20, 20);
+            const groundGeometry = new THREE.PlaneGeometry(200, 200);
+            const groundMaterial = new THREE.MeshLambertMaterial({ map: groundTexture });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            const walkwayTexture = createTexture(0xD2B48C);
+            walkwayTexture.repeat.set(4, 20);
+            const walkwayGeometry = new THREE.PlaneGeometry(8, 100);
+            const walkwayMaterial = new THREE.MeshLambertMaterial({ map: walkwayTexture });
+            const walkway = new THREE.Mesh(walkwayGeometry, walkwayMaterial);
+            walkway.rotation.x = -Math.PI / 2;
+            walkway.position.y = 0.01;
+            walkway.receiveShadow = true;
+            scene.add(walkway);
+
+            const tileLineGeometry = new THREE.PlaneGeometry(0.1, 100);
+            const tileLineMaterial = new THREE.MeshLambertMaterial({ color: 0xA0522D });
+            for (let x = -3; x <= 3; x += 1.5) {
+                const tileLine = new THREE.Mesh(tileLineGeometry, tileLineMaterial);
+                tileLine.rotation.x = -Math.PI / 2;
+                tileLine.position.set(x, 0.02, 0);
+                scene.add(tileLine);
+            }
+
+            const sidePathTexture = createTexture(0xC0C0C0);
+            sidePathTexture.repeat.set(2, 20);
+            [-12, 12].forEach(x => {
+                const sidePath = new THREE.Mesh(
+                    new THREE.PlaneGeometry(6, 100),
+                    new THREE.MeshLambertMaterial({ map: sidePathTexture })
+                );
+                sidePath.rotation.x = -Math.PI / 2;
+                sidePath.position.set(x, 0.02, 0);
+                sidePath.receiveShadow = true;
+                scene.add(sidePath);
+            });
+
+            createBuildings();
+            createTrees();
+            createStreetFurniture();
+            createPlayground();
+        }
+        
+        function createBuildings() {
+            buildings.forEach(b => scene.remove(b));
+            buildings = [];
+            
+            buildingWindows.forEach(w => scene.remove(w));
+            buildingWindows = [];
+            
+            buildingSigns.forEach(s => scene.remove(s));
+            buildingSigns = [];
+            
+            const yearProgress = (currentYear - 1960) / (2070 - 1960);
+            const buildingCount = Math.floor(12 + yearProgress * 8);
+            const buildingColors = [0xE5E5E5, 0x8B4513, 0x696969, 0xF5F5DC, 0x2F4F4F];
+
+            for (let i = 0; i < buildingCount; i++) {
+                const texture = createTexture(buildingColors[Math.floor(Math.random() * buildingColors.length)]);
+                
+                const width = 6 + Math.random() * 8;
+                const height = 8 + Math.random() * (15 + yearProgress * 20);
+                const depth = 8 + Math.random() * 12;
+                
+                const geometry = new THREE.BoxGeometry(width, height, depth);
+                const material = new THREE.MeshLambertMaterial({ map: texture });
+                const building = new THREE.Mesh(geometry, material);
+                
+                const side = i < buildingCount/2 ? -1 : 1;
+                building.position.set(
+                    side * (20 + Math.random() * 30),
+                    height / 2,
+                    ((i % (buildingCount/2)) - buildingCount/4) * 15
+                );
+                building.castShadow = true;
+                building.receiveShadow = true;
+                buildings.push(building);
+                scene.add(building);
+
+                const windowMaterial = new THREE.MeshLambertMaterial({ 
+                    color: yearProgress > 0.5 ? 0xFFFF88 : 0x87CEEB,
+                    transparent: true,
+                    opacity: 0.7,
+                    emissive: yearProgress > 0.5 ? 0xFFFF44 : 0x000000,
+                    emissiveIntensity: 0.2
+                });
+                
+                for (let wx = -width/2 + 1.5; wx < width/2 - 1; wx += 2.5) {
+                    for (let wy = 2; wy < height - 2; wy += 3) {
+                        const window = new THREE.Mesh(
+                            new THREE.PlaneGeometry(1.5, 2),
+                            windowMaterial
+                        );
+                        window.position.set(
+                            building.position.x + wx,
+                            building.position.y - height/2 + wy,
+                            building.position.z + depth/2 + 0.01
+                        );
+                        buildingWindows.push(window);
+                        scene.add(window);
+                    }
+                }
+
+                if (yearProgress > 0.5 && Math.random() < yearProgress - 0.4) {
+                    const signGeometry = new THREE.PlaneGeometry(5, 1.5);
+                    const signCanvas = document.createElement('canvas');
+                    signCanvas.width = 512;
+                    signCanvas.height = 128;
+                    const ctx = signCanvas.getContext('2d');
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(0, 0, 512, 128);
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = 'bold 48px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🏥 Senior Care', 256, 80);
+                    
+                    const signTexture = new THREE.CanvasTexture(signCanvas);
+                    const signMaterial = new THREE.MeshLambertMaterial({ map: signTexture });
+                    const sign = new THREE.Mesh(signGeometry, signMaterial);
+                    sign.position.set(
+                        building.position.x,
+                        height - 3,
+                        building.position.z + depth/2 + 0.1
+                    );
+                    buildingSigns.push(sign);
+                    scene.add(sign);
+                }
+            }
+        }
+
+        function createTrees() {
+            trees.forEach(tree => scene.remove(tree));
+            trees = [];
+            
+            const yearProgress = (currentYear - 1960) / (2070 - 1960);
+            
+            const treeSpacing = 15;
+            const roadLength = 45;
+            
+            for (let side = -1; side <= 1; side += 2) {
+                for (let z = -roadLength; z <= roadLength; z += treeSpacing) {
+                    const treeGroup = new THREE.Group();
+                    
+                    const growthFactor = 1 + yearProgress * 0.6;
+                    const trunkHeight = 4 * growthFactor;
+                    const trunkRadius = 0.25 + yearProgress * 0.1;
+                    
+                    const trunkTexture = createTexture(0x8B4513);
+                    const trunkGeometry = new THREE.CylinderGeometry(trunkRadius, trunkRadius + 0.1, trunkHeight, 8);
+                    const trunkMaterial = new THREE.MeshLambertMaterial({ map: trunkTexture });
+                    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                    trunk.position.y = trunkHeight / 2;
+                    trunk.castShadow = true;
+                    treeGroup.add(trunk);
+                    
+                    const baseTreeSize = 2.5;
+                    const treeSize = baseTreeSize * growthFactor;
+                    const leafDensity = 0.6 + yearProgress * 0.3;
+                    
+                    let leafColor;
+                    if (yearProgress < 0.3) {
+                        leafColor = 0x228B22;
+                    } else if (yearProgress < 0.6) {
+                        leafColor = 0x32CD32;
+                    } else {
+                        leafColor = 0x00FF00;
+                    }
+                    
+                    if (currentYear > 2000 && Math.random() < 0.3) {
+                        const autumnColors = [0xFF4500, 0xFF8C00, 0xFFD700, 0x8B4513];
+                        leafColor = autumnColors[Math.floor(Math.random() * autumnColors.length)];
+                    }
+                    
+                    const leafTexture = createTexture(leafColor);
+                    
+                    const leafCount = Math.floor(1 + yearProgress * 1.5);
+                    
+                    for (let j = 0; j < leafCount; j++) {
+                        const leafSize = treeSize * (0.8 + Math.random() * 0.3);
+                        const leavesGeometry = new THREE.SphereGeometry(leafSize, 8, 6);
+                        const leavesMaterial = new THREE.MeshLambertMaterial({ 
+                            map: leafTexture, 
+                            transparent: true, 
+                            opacity: leafDensity 
+                        });
+                        const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                        
+                        const offsetX = (Math.random() - 0.5) * treeSize * 0.2;
+                        const offsetZ = (Math.random() - 0.5) * treeSize * 0.2;
+                        const offsetY = Math.random() * treeSize * 0.15;
+                        
+                        leaves.position.set(offsetX, trunkHeight + leafSize * 0.7 + offsetY, offsetZ);
+                        leaves.castShadow = true;
+                        treeGroup.add(leaves);
+                    }
+                    
+                    treeGroup.position.set(side * 10, 0, z);
+                    trees.push(treeGroup);
+                    scene.add(treeGroup);
+                }
+            }
+            
+            const parkAreas = [
+                { x: 30, z: -20 },
+                { x: -30, z: 20 }
+            ];
+            
+            parkAreas.forEach(pos => {
+                const treeGroup = new THREE.Group();
+                
+                const growthFactor = 1.2 + yearProgress * 0.8;
+                const trunkHeight = 5 * growthFactor;
+                const trunkRadius = 0.35 + yearProgress * 0.15;
+                
+                const trunkTexture = createTexture(0x8B4513);
+                const trunkGeometry = new THREE.CylinderGeometry(trunkRadius, trunkRadius + 0.15, trunkHeight, 8);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ map: trunkTexture });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.y = trunkHeight / 2;
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+                
+                const treeSize = 3.5 * growthFactor;
+                const leafDensity = 0.7 + yearProgress * 0.25;
+                const leafColor = yearProgress < 0.5 ? 0x228B22 : 0x00FF00;
+                const leafTexture = createTexture(leafColor);
+                
+                const leavesGeometry = new THREE.SphereGeometry(treeSize, 10, 8);
+                const leavesMaterial = new THREE.MeshLambertMaterial({ 
+                    map: leafTexture, 
+                    transparent: true, 
+                    opacity: leafDensity 
+                });
+                const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                leaves.position.y = trunkHeight + treeSize * 0.5;
+                leaves.castShadow = true;
+                treeGroup.add(leaves);
+                
+                treeGroup.position.set(pos.x, 0, pos.z);
+                trees.push(treeGroup);
+                scene.add(treeGroup);
+            });
+        }
+
+        function createPlayground() {
+            const yearProgress = (currentYear - 1960) / (2070 - 1960);
+            
+            if (yearProgress < 0.7) {
+                const playgroundGroup = new THREE.Group();
+                playgroundGroup.position.set(30, 0, -20);
+                
+                const swingFrame = new THREE.Mesh(
+                    new THREE.BoxGeometry(6, 3, 0.2),
+                    new THREE.MeshLambertMaterial({ map: createTexture(0xFF0000) })
+                );
+                swingFrame.position.y = 1.5;
+                playgroundGroup.add(swingFrame);
+                
+                const slide = new THREE.Mesh(
+                    new THREE.BoxGeometry(2, 2, 4),
+                    new THREE.MeshLambertMaterial({ map: createTexture(0x0000FF) })
+                );
+                slide.position.set(4, 1, 0);
+                slide.rotation.x = -0.3;
+                playgroundGroup.add(slide);
+                
+                scene.add(playgroundGroup);
+            } else {
+                const exerciseGroup = new THREE.Group();
+                exerciseGroup.position.set(30, 0, -20);
+                
+                for (let i = 0; i < 3; i++) {
+                    const bar = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.05, 0.05, 1.2, 8),
+                        new THREE.MeshLambertMaterial({ map: createTexture(0x808080) })
+                    );
+                    bar.position.set(i * 2, 0.6, 0);
+                    exerciseGroup.add(bar);
+                }
+                
+                scene.add(exerciseGroup);
+            }
+        }
+
+        function createStreetFurniture() {
+            const benchPositions = [
+                [-10, -40], [-10, -20], [-10, 0], [-10, 20], [-10, 40],
+                [10, -40], [10, -20], [10, 0], [10, 20], [10, 40]
+            ];
+            
+            benchPositions.forEach(pos => {
+                const benchTexture = createTexture(0x8B4513);
+                
+                const seat = new THREE.Mesh(
+                    new THREE.BoxGeometry(2, 0.2, 0.6),
+                    new THREE.MeshLambertMaterial({ map: benchTexture })
+                );
+                seat.position.set(pos[0], 0.4, pos[1]);
+                seat.castShadow = true;
+                scene.add(seat);
+                
+                const back = new THREE.Mesh(
+                    new THREE.BoxGeometry(2, 0.8, 0.1),
+                    new THREE.MeshLambertMaterial({ map: benchTexture })
+                );
+                back.position.set(pos[0], 0.8, pos[1] - 0.25);
+                back.castShadow = true;
+                scene.add(back);
+            });
+
+            for (let i = -50; i <= 50; i += 25) {
+                [-14, 14].forEach(x => {
+                    const pole = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.1, 0.15, 6, 8),
+                        new THREE.MeshLambertMaterial({ map: createTexture(0x696969) })
+                    );
+                    pole.position.set(x, 3, i);
+                    pole.castShadow = true;
+                    scene.add(pole);
+                    
+                    const light = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.3, 8, 6),
+                        new THREE.MeshLambertMaterial({ 
+                            color: 0xFFFF88,
+                            emissive: 0xFFFF44,
+                            emissiveIntensity: 0.2
+                        })
+                    );
+                    light.position.set(x, 6.5, i);
+                    scene.add(light);
+                    
+                    const pointLight = new THREE.PointLight(0xFFFF88, 0.5, 10);
+                    pointLight.position.copy(light.position);
+                    scene.add(pointLight);
+                });
+            }
+        }
+
+        function createMinecraftPerson(ageGroup, x, z) {
+            const group = new THREE.Group();
+            
+            let bodyHeight, headSize, age, skinColor, shirtColor, pantsColor, isBent = false;
+            
+            const skinColors = [0xFFDBAC, 0xF1C27D, 0xE0AC69, 0xC68642];
+            skinColor = skinColors[Math.floor(Math.random() * skinColors.length)];
+            
+            switch (ageGroup) {
+                case 'baby':
+                    bodyHeight = 0.6;
+                    headSize = 0.25;
+                    shirtColor = [0xFF69B4, 0x00BFFF, 0xFFB6C1, 0x98FB98, 0xF0E68C][Math.floor(Math.random() * 5)];
+                    pantsColor = 0xFFFFFF;
+                    age = Math.floor(Math.random() * 6);
+                    break;
+                case 'child':
+                    bodyHeight = 1.2;
+                    headSize = 0.3;
+                    shirtColor = [0xFF1493, 0x00BFFF, 0x32CD32, 0xFFD700, 0xFF4500][Math.floor(Math.random() * 5)];
+                    pantsColor = [0x4169E1, 0x228B22, 0xFF6347][Math.floor(Math.random() * 3)];
+                    age = Math.floor(Math.random() * 9) + 6;
+                    break;
+                case 'young':
+                    bodyHeight = 1.8;
+                    headSize = 0.35;
+                    shirtColor = [0x1E90FF, 0xFF6347, 0x32CD32, 0x9370DB][Math.floor(Math.random() * 4)];
+                    pantsColor = [0x000080, 0x2F4F4F, 0x000000][Math.floor(Math.random() * 3)];
+                    age = Math.floor(Math.random() * 10) + 15;
+                    break;
+                case 'middle':
+                    bodyHeight = 1.75;
+                    headSize = 0.35;
+                    shirtColor = [0x2F4F4F, 0x8B0000, 0x000080, 0x556B2F][Math.floor(Math.random() * 4)];
+                    pantsColor = [0x000000, 0x2F4F4F, 0x696969][Math.floor(Math.random() * 3)];
+                    age = Math.floor(Math.random() * 40) + 25;
+                    break;
+                case 'elderly':
+                    bodyHeight = 1.6;
+                    headSize = 0.35;
+                    shirtColor = [0x708090, 0x696969, 0x8B4513, 0xA0522D][Math.floor(Math.random() * 4)];
+                    pantsColor = [0x2F2F2F, 0x696969, 0x8B4513][Math.floor(Math.random() * 3)];
+                    age = Math.floor(Math.random() * 30) + 65;
+                    if (age >= 80) {
+                        isBent = true;
+                        bodyHeight *= 0.9;
+                    }
+                    break;
+            }
+            
+            const headGeometry = new THREE.BoxGeometry(headSize, headSize, headSize);
+            const headMaterial = new THREE.MeshLambertMaterial({ map: createTexture(skinColor) });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = bodyHeight + headSize/2;
+            if (isBent) {
+                head.position.y -= headSize * 0.3;
+                head.rotation.x = 0.3;
+            }
+            head.castShadow = true;
+            group.add(head);
+            
+            if (ageGroup === 'elderly') {
+                const hairColor = age >= 80 ? 0xFFFFFF : age >= 70 ? 0xE5E5E5 : 0xC0C0C0;
+                const hair = new THREE.Mesh(
+                    new THREE.BoxGeometry(headSize * 1.1, headSize * 0.3, headSize * 1.1),
+                    new THREE.MeshLambertMaterial({ map: createTexture(hairColor) })
+                );
+                hair.position.set(0, head.position.y + headSize * 0.35, 0);
+                hair.castShadow = true;
+                group.add(hair);
+            } else if (ageGroup !== 'baby') {
+                const hairColors = [0x000000, 0x8B4513, 0x2F2F2F];
+                const hair = new THREE.Mesh(
+                    new THREE.BoxGeometry(headSize * 1.1, headSize * 0.3, headSize * 1.1),
+                    new THREE.MeshLambertMaterial({ map: createTexture(hairColors[Math.floor(Math.random() * hairColors.length)]) })
+                );
+                hair.position.set(0, head.position.y + headSize * 0.35, 0);
+                hair.castShadow = true;
+                group.add(hair);
+            }
+            
+            const eyeGeometry = new THREE.PlaneGeometry(headSize * 0.1, headSize * 0.1);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            
+            [-1, 1].forEach(side => {
+                const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                eye.position.set(side * headSize * 0.2, head.position.y, headSize * 0.51);
+                group.add(eye);
+            });
+            
+            const torsoGeometry = new THREE.BoxGeometry(headSize * 2, bodyHeight * 0.5, headSize);
+            const torsoMaterial = new THREE.MeshLambertMaterial({ map: createTexture(shirtColor) });
+            const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+            torso.position.y = bodyHeight * 0.5;
+            if (isBent) {
+                torso.rotation.x = 0.2;
+                torso.position.y -= bodyHeight * 0.1;
+            }
+            torso.castShadow = true;
+            group.add(torso);
+            
+            [-1, 1].forEach(side => {
+                const arm = new THREE.Mesh(
+                    new THREE.BoxGeometry(headSize * 0.4, bodyHeight * 0.4, headSize * 0.4),
+                    new THREE.MeshLambertMaterial({ map: createTexture(skinColor) })
+                );
+                arm.position.set(side * headSize * 1.2, bodyHeight * 0.5, 0);
+                if (isBent) arm.position.y -= bodyHeight * 0.1;
+                arm.castShadow = true;
+                group.add(arm);
+            });
+            
+            [-1, 1].forEach(side => {
+                const leg = new THREE.Mesh(
+                    new THREE.BoxGeometry(headSize * 0.4, bodyHeight * 0.4, headSize * 0.4),
+                    new THREE.MeshLambertMaterial({ map: createTexture(pantsColor) })
+                );
+                leg.position.set(side * headSize * 0.4, bodyHeight * 0.2, 0);
+                leg.castShadow = true;
+                group.add(leg);
+            });
+            
+            let hasAssistiveDevice = false;
+            
+            if (ageGroup === 'baby' && Math.random() < 0.5) {
+                const stroller = new THREE.Mesh(
+                    new THREE.BoxGeometry(headSize * 3, headSize * 1.5, headSize * 3),
+                    new THREE.MeshLambertMaterial({ map: createTexture(0x4169E1) })
+                );
+                stroller.position.set(0, headSize * 0.7, 0);
+                stroller.castShadow = true;
+                group.add(stroller);
+                
+                for (let i = 0; i < 4; i++) {
+                    const wheel = new THREE.Mesh(
+                        new THREE.CylinderGeometry(headSize * 0.3, headSize * 0.3, headSize * 0.2, 8),
+                        new THREE.MeshLambertMaterial({ map: createTexture(0x2F2F2F) })
+                    );
+                    const x = (i % 2 === 0 ? -headSize : headSize);
+                    const z = (i < 2 ? -headSize : headSize);
+                    wheel.position.set(x, headSize * 0.3, z);
+                    wheel.rotation.z = Math.PI / 2;
+                    group.add(wheel);
+                }
+            }
+            
+            if (ageGroup === 'elderly') {
+                const nearestYear = Object.keys(populationData).reduce((prev, curr) => 
+                    Math.abs(parseInt(curr) - currentYear) < Math.abs(parseInt(prev) - currentYear) ? curr : prev
+                );
+                const currentData = populationData[nearestYear];
+                const elderlyRatio = currentData ? (currentData.elderly / 100) : 0.2;
+                let assistiveChance = Math.min(0.9, elderlyRatio * 3 + (age - 65) * 0.03);
+                
+                if (Math.random() < assistiveChance) {
+                    hasAssistiveDevice = true;
+                    
+                    if (age >= 85 && Math.random() < 0.3) {
+                        const chair = new THREE.Mesh(
+                            new THREE.BoxGeometry(headSize * 2.5, headSize * 2, headSize * 2.5),
+                            new THREE.MeshLambertMaterial({ map: createTexture(0x4169E1) })
+                        );
+                        chair.position.set(0, headSize, 0);
+                        chair.castShadow = true;
+                        group.add(chair);
+                    } else if (age >= 75 && Math.random() < 0.4) {
+                        const walkerFrame = new THREE.Group();
+                        for (let x of [-headSize * 0.8, headSize * 0.8]) {
+                            for (let z of [-headSize * 0.6, headSize * 0.6]) {
+                                const bar = new THREE.Mesh(
+                                    new THREE.BoxGeometry(headSize * 0.1, bodyHeight * 0.7, headSize * 0.1),
+                                    new THREE.MeshLambertMaterial({ map: createTexture(0xA0A0A0) })
+                                );
+                                bar.position.set(x, bodyHeight * 0.35, z);
+                                walkerFrame.add(bar);
+                            }
+                        }
+                        walkerFrame.position.set(0, 0, headSize);
+                        group.add(walkerFrame);
+                    } else {
+                        const cane = new THREE.Mesh(
+                            new THREE.CylinderGeometry(headSize * 0.05, headSize * 0.08, bodyHeight * 0.8, 8),
+                            new THREE.MeshLambertMaterial({ map: createTexture(0x8B4513) })
+                        );
+                        cane.position.set(headSize * 1.5, bodyHeight * 0.4, 0);
+                        if (isBent) cane.position.y -= bodyHeight * 0.1;
+                        cane.castShadow = true;
+                        group.add(cane);
+                    }
+                }
+            }
+            
+            if (ageGroup === 'child' && Math.random() < 0.6) {
+                const backpack = new THREE.Mesh(
+                    new THREE.BoxGeometry(headSize * 1.2, headSize * 1.5, headSize * 0.6),
+                    new THREE.MeshLambertMaterial({ map: createTexture([0xFF0000, 0x0000FF, 0xFF1493][Math.floor(Math.random() * 3)]) })
+                );
+                backpack.position.set(0, bodyHeight * 0.6, -headSize * 0.8);
+                backpack.castShadow = true;
+                group.add(backpack);
+            }
+            
+            group.position.set(x, 0, z);
+            
+            group.userData = {
+                ageGroup: ageGroup,
+                age: age,
+                bodyHeight: bodyHeight,
+                headSize: headSize,
+                isBent: isBent,
+                walkSpeed: ageGroup === 'baby' ? 0.01 :
+                           ageGroup === 'elderly' ? (hasAssistiveDevice ? 0.015 : 0.02) :
+                           ageGroup === 'child' ? 0.04 : 0.03,
+                direction: Math.random() * Math.PI * 2,
+                animationTime: Math.random() * Math.PI * 2,
+                hasAssistiveDevice: hasAssistiveDevice,
+                isWalkingOnPath: Math.random() < 0.6,
+                parentPerson: null,
+                originalPosition: new THREE.Vector3(x, 0, z),
+                formationPosition: null,
+                formationProgress: 0
+            };
+            
+            return group;
+        }
+
+        function createPeople() {
+            people.forEach(person => scene.remove(person));
+            ageLabels.forEach(labelData => {
+                if (labelData.element && labelData.element.parentNode) {
+                    labelData.element.parentNode.removeChild(labelData.element);
+                }
+            });
+            people = [];
+            ageLabels = [];
+            
+            const years = Object.keys(populationData).map(y => parseInt(y));
+            const nearestYear = years.reduce((prev, curr) => 
+                Math.abs(curr - currentYear) < Math.abs(prev - currentYear) ? curr : prev
+            );
+            const data = populationData[nearestYear];
+            const totalPeople = 40;
+            
+            let adjustedData = {...data};
+            let displayRate = data.fertilityRate;
+            
+            if (fertilityScenario === 'custom') {
+                displayRate = currentFertilityRate;
+            } else if (fertilityScenario === 'replacement') {
+                displayRate = 2.1;
+            } else if (fertilityScenario === 'high') {
+                displayRate = 3.0;
+            }
+            
+            if (fertilityScenario !== 'current') {
+                const fertRatio = displayRate / data.fertilityRate;
+                adjustedData.babies = Math.min(30, data.babies * fertRatio);
+                adjustedData.children = Math.min(35, data.children * (fertRatio * 0.8));
+                
+                const total = adjustedData.babies + adjustedData.children + adjustedData.young + adjustedData.middle + adjustedData.elderly;
+                const scale = 100 / total;
+                adjustedData.babies *= scale;
+                adjustedData.children *= scale;
+                adjustedData.young *= scale;
+                adjustedData.middle *= scale;
+                adjustedData.elderly *= scale;
+            }
+            
+            const counts = {
+                baby: Math.round(totalPeople * adjustedData.babies / 100),
+                child: Math.round(totalPeople * adjustedData.children / 100),
+                young: Math.round(totalPeople * adjustedData.young / 100),
+                middle: Math.round(totalPeople * adjustedData.middle / 100),
+                elderly: Math.round(totalPeople * adjustedData.elderly / 100)
+            };
+            
+            const sum = Object.values(counts).reduce((a, b) => a + b, 0);
+            if (sum < totalPeople) {
+                counts.middle += totalPeople - sum;
+            }
+            
+            Object.entries(counts).forEach(([ageGroup, count]) => {
+                for (let i = 0; i < count; i++) {
+                    let x, z;
+                    
+                    if (isFormationMode) {
+                        x = 0;
+                        z = 0;
+                    } else {
+                        const angle = Math.random() * Math.PI * 2;
+                        const radius = 5 + Math.random() * 25;
+                        x = Math.cos(angle) * radius;
+                        z = Math.sin(angle) * radius;
+                    }
+                    
+                    const person = createMinecraftPerson(ageGroup, x, z);
+                    people.push(person);
+                    scene.add(person);
+                    createAgeLabel(person);
+                }
+            });
+            
+            if (!isFormationMode) {
+                const babies = people.filter(p => p.userData.ageGroup === 'baby');
+                const potentialParents = people.filter(p => 
+                    p.userData.ageGroup === 'middle' || 
+                    p.userData.ageGroup === 'young'
+                );
+                
+                babies.forEach(baby => {
+                    if (potentialParents.length > 0) {
+                        const parent = potentialParents[Math.floor(Math.random() * potentialParents.length)];
+                        baby.userData.parentPerson = parent;
+                        baby.position.x = parent.position.x + (Math.random() - 0.5) * 2;
+                        baby.position.z = parent.position.z + (Math.random() - 0.5) * 2;
+                    }
+                });
+            }
+            
+            updateDisplay();
+        }
+        
+        function createAgeLabel(person) {
+            const label = document.createElement('div');
+            label.className = `age-label ${person.userData.ageGroup}`;
+            
+            let ageText;
+            const age = person.userData.age;
+            
+            if (age < 10) {
+                ageText = age + 'y';
+            } else if (age < 20) {
+                ageText = '10s';
+            } else if (age < 30) {
+                ageText = '20s';
+            } else if (age < 40) {
+                ageText = '30s';
+            } else if (age < 50) {
+                ageText = '40s';
+            } else if (age < 60) {
+                ageText = '50s';
+            } else if (age < 70) {
+                ageText = '60s';
+            } else if (age < 80) {
+                ageText = '70s';
+            } else if (age < 90) {
+                ageText = '80s';
+            } else {
+                ageText = '90s';
+            }
+            
+            label.textContent = ageText;
+            label.style.display = 'none';
+            document.body.appendChild(label);
+            ageLabels.push({ element: label, person: person });
+        }
+        
+        function updateAgeLabels() {
+            ageLabels.forEach(labelData => {
+                const person = labelData.person;
+                const label = labelData.element;
+                
+                if (!person || !label) return;
+                
+                const isHighlighted = highlightedAgeGroup && person.userData.ageGroup === highlightedAgeGroup;
+                const isInFormation = isFormationMode && person.userData.formationProgress > 0.8;
+                
+                label.classList.remove('highlighted', 'person-highlighted');
+                
+                if (isHighlighted) {
+                    label.classList.add('person-highlighted');
+                }
+                
+                const labelPosition = new THREE.Vector3(
+                    person.position.x,
+                    person.position.y + person.userData.bodyHeight + person.userData.headSize + 0.5,
+                    person.position.z
+                );
+                
+                labelPosition.project(camera);
+                
+                const x = (labelPosition.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (labelPosition.y * -0.5 + 0.5) * window.innerHeight;
+                
+                if (labelPosition.z < 1 && x >= 0 && x <= window.innerWidth && y >= 0 && y <= window.innerHeight) {
+                    label.style.left = (x - 20) + 'px';
+                    label.style.top = (y - 10) + 'px';
+                    label.style.display = 'block';
+                    
+                    const distance = camera.position.distanceTo(person.position);
+                    let baseOpacity = Math.max(0.3, Math.min(1, 15 / distance));
+                    
+                    if (currentView !== 'bird') {
+                        const scale = Math.max(0.6, Math.min(1.2, 10 / distance));
+                        label.style.transform = `scale(${scale})`;
+                        
+                        baseOpacity = Math.max(0.2, Math.min(1, 20 / distance));
+                        
+                        if (distance > 15) {
+                            label.style.filter = `blur(${Math.min(2, (distance - 15) * 0.1)}px)`;
+                        } else {
+                            label.style.filter = 'none';
+                        }
+                        
+                        label.style.zIndex = Math.floor(1000 - distance * 10);
+                    } else {
+                        label.style.transform = 'scale(1)';
+                        label.style.filter = 'none';
+                        label.style.zIndex = 10;
+                    }
+                    
+                    if (isInFormation) {
+                        baseOpacity = 0.7;
+                        label.style.fontSize = '13px';
+                        label.style.fontWeight = '700';
+                        label.style.padding = '5px 10px';
+                    } else if (!isHighlighted) {
+                        label.style.fontSize = '11px';
+                        label.style.fontWeight = '600';
+                        label.style.padding = '4px 8px';
+                    }
+                    
+                    const opacity = isHighlighted ? 1 : (isInFormation ? 0.7 : baseOpacity);
+                    label.style.opacity = opacity;
+                } else {
+                    label.style.display = 'none';
+                }
+            });
+        }
+
+        function setView(viewType) {
+            currentView = viewType;
+            camera.rotation.order = 'YXZ';
+            switch (viewType) {
+                case 'child':
+                    camera.position.set(0, 1.2, 5);
+                    camera.fov = 75;
+                    break;
+                case 'adult':
+                    camera.position.set(0, 1.7, 5);
+                    camera.fov = 70;
+                    break;
+                case 'bird':
+                    camera.position.set(0, 40, 35);
+                    camera.lookAt(0, 0, 0);
+                    camera.fov = 60;
+                    break;
+            }
+            camera.rotation.z = 0;
+            camera.updateProjectionMatrix();
+        }
+
+        function updateDisplay() {
+            const years = Object.keys(populationData).map(y => parseInt(y));
+            const nearestYear = years.reduce((prev, curr) => 
+                Math.abs(curr - currentYear) < Math.abs(prev - currentYear) ? curr : prev
+            );
+            const data = populationData[nearestYear];
+            
+            let displayRate = data.fertilityRate;
+            if (fertilityScenario === 'custom') {
+                displayRate = currentFertilityRate;
+            } else if (fertilityScenario === 'replacement') {
+                displayRate = 2.1;
+            } else if (fertilityScenario === 'high') {
+                displayRate = 3.0;
+            }
+            document.getElementById('fertilityRate').textContent = displayRate.toFixed(1);
+            document.getElementById('fertilitySlider').value = displayRate;
+            
+            const percentage = ((displayRate - 0.5) / (4.0 - 0.5)) * 100;
+            const sliderFill = document.getElementById('fertilitySliderFill');
+            if (sliderFill) {
+                sliderFill.style.width = percentage + '%';
+            }
+            
+            let adjustedData = {...data};
+            if (fertilityScenario !== 'current') {
+                const fertRatio = displayRate / data.fertilityRate;
+                adjustedData.babies = Math.min(30, data.babies * fertRatio);
+                adjustedData.children = Math.min(35, data.children * (fertRatio * 0.8));
+                
+                const total = adjustedData.babies + adjustedData.children + adjustedData.young + adjustedData.middle + adjustedData.elderly;
+                const scale = 100 / total;
+                adjustedData.babies *= scale;
+                adjustedData.children *= scale;
+                adjustedData.young *= scale;
+                adjustedData.middle *= scale;
+                adjustedData.elderly *= scale;
+            }
+            
+            document.getElementById('currentYear').textContent = currentYear;
+            document.getElementById('floaterYear').textContent = currentYear;
+            
+            document.getElementById('babiesPercent').textContent = adjustedData.babies.toFixed(1) + '%';
+            document.getElementById('childrenPercent').textContent = adjustedData.children.toFixed(1) + '%';
+            document.getElementById('youngPercent').textContent = adjustedData.young.toFixed(1) + '%';
+            document.getElementById('middlePercent').textContent = adjustedData.middle.toFixed(1) + '%';
+            document.getElementById('elderlyPercent').textContent = adjustedData.elderly.toFixed(1) + '%';
+            
+            document.getElementById('babiesBar').style.width = adjustedData.babies + '%';
+            document.getElementById('childrenBar').style.width = adjustedData.children + '%';
+            document.getElementById('youngBar').style.width = adjustedData.young + '%';
+            document.getElementById('middleBar').style.width = adjustedData.middle + '%';
+            document.getElementById('elderlyBar').style.width = adjustedData.elderly + '%';
+            
+            document.getElementById('totalPop').textContent = data.total.toFixed(1) + 'M';
+            document.getElementById('medianAge').textContent = data.medianAge.toFixed(1) + ' years';
+            
+            const workingAge = adjustedData.young + adjustedData.middle;
+            const dependent = adjustedData.babies + adjustedData.children + adjustedData.elderly;
+            const depRatio = (dependent / workingAge * 100).toFixed(1);
+            const workforceRatio = (workingAge).toFixed(1);
+            document.getElementById('depRatio').textContent = depRatio + '%';
+            document.getElementById('workforceRatio').textContent = workforceRatio + '%';
+            
+            let societyType = 'Young Society';
+            if (adjustedData.elderly >= 7 && adjustedData.elderly < 14) societyType = 'Aging Society';
+            else if (adjustedData.elderly >= 14 && adjustedData.elderly < 20) societyType = 'Aged Society';
+            else if (adjustedData.elderly >= 20) societyType = 'Super-aged Society';
+            document.getElementById('societyType').textContent = societyType;
+        }
+
+        function setupControls() {
+            let mouseX = 0, mouseY = 0;
+            let isMouseDown = false;
+            
+            const toggleButton = document.getElementById('toggleButton');
+            const controlsContent = document.getElementById('controlsContent');
+            const controls = document.getElementById('controls');
+            let isCollapsed = false;
+            
+            toggleButton.addEventListener('click', () => {
+                isCollapsed = !isCollapsed;
+                if (isCollapsed) {
+                    controlsContent.classList.add('collapsed');
+                    controls.classList.add('collapsed');
+                    toggleButton.textContent = '▼';
+                    const yearFloater = document.getElementById('yearFloater');
+                    yearFloater.classList.add('visible', 'collapsed');
+                } else {
+                    controlsContent.classList.remove('collapsed');
+                    controls.classList.remove('collapsed');
+                    toggleButton.textContent = '▲';
+                    const yearFloater = document.getElementById('yearFloater');
+                    yearFloater.classList.remove('visible', 'collapsed');
+                }
+            });
+            
+            const formationBtn = document.getElementById('formationBtn');
+            formationBtn.addEventListener('click', () => {
+                if (formationAnimating) return;
+                
+                isFormationMode = !isFormationMode;
+                formationAnimating = true;
+                
+                if (isFormationMode) {
+                    formationBtn.classList.add('active');
+                    formationBtn.innerHTML = '<span>🚶</span> Return to Walking';
+                    createFormation();
+                    
+                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector('[data-view="bird"]').classList.add('active');
+                    setView('bird');
+                } else {
+                    formationBtn.classList.remove('active');
+                    formationBtn.innerHTML = '<span>📊</span> Form Age Chart';
+                    disperseFormation();
+                }
+                
+                setTimeout(() => {
+                    formationAnimating = false;
+                }, 5000);
+            });
+            
+            document.querySelectorAll('.age-group').forEach(ageGroup => {
+                ageGroup.addEventListener('mouseenter', () => {
+                    highlightedAgeGroup = ageGroup.dataset.ageGroup;
+                    updateAgeLabels();
+                });
+                
+                ageGroup.addEventListener('mouseleave', () => {
+                    highlightedAgeGroup = null;
+                    updateAgeLabels();
+                });
+            });
+            
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    setView(btn.dataset.view);
+                });
+            });
+            
+            const statsToggle = document.getElementById('statsToggle');
+            const stats = document.getElementById('stats');
+            let statsCollapsed = false;
+            
+            statsToggle.addEventListener('click', () => {
+                statsCollapsed = !statsCollapsed;
+                if (statsCollapsed) {
+                    stats.classList.add('collapsed');
+                    statsToggle.textContent = '▼';
+                } else {
+                    stats.classList.remove('collapsed');
+                    statsToggle.textContent = '▲';
+                }
+            });
+            
+            document.addEventListener('mousedown', () => isMouseDown = true);
+            document.addEventListener('mouseup', () => isMouseDown = false);
+            
+            document.addEventListener('mousemove', (event) => {
+                if (isMouseDown && currentView !== 'bird') {
+                    const deltaX = event.clientX - mouseX;
+                    const deltaY = event.clientY - mouseY;
+                    
+                    const currentRotationY = camera.rotation.y;
+                    const currentRotationX = camera.rotation.x;
+                    
+                    camera.rotation.order = 'YXZ';
+                    camera.rotation.y = currentRotationY - deltaX * 0.005;
+                    camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, currentRotationX - deltaY * 0.005));
+                    camera.rotation.z = 0;
+                }
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+            
+            document.addEventListener('keydown', (event) => {
+                switch(event.code) {
+                    case 'KeyW': keys.w = true; break;
+                    case 'KeyA': keys.a = true; break;
+                    case 'KeyS': keys.s = true; break;
+                    case 'KeyD': keys.d = true; break;
+                    case 'ShiftLeft':
+                    case 'ShiftRight': keys.shift = true; break;
+                    case 'Space': 
+                        keys.space = true;
+                        event.preventDefault();
+                        break;
+                }
+            });
+            
+            document.addEventListener('keyup', (event) => {
+                switch(event.code) {
+                    case 'KeyW': keys.w = false; break;
+                    case 'KeyA': keys.a = false; break;
+                    case 'KeyS': keys.s = false; break;
+                    case 'KeyD': keys.d = false; break;
+                    case 'ShiftLeft':
+                    case 'ShiftRight': keys.shift = false; break;
+                    case 'Space': keys.space = false; break;
+                }
+            });
+            
+            document.addEventListener('wheel', (event) => {
+                if (currentView === 'bird') {
+                    camera.position.y += event.deltaY * 0.05;
+                    camera.position.y = Math.max(10, Math.min(60, camera.position.y));
+                    camera.position.z = camera.position.y;
+                    camera.lookAt(0, 0, 0);
+                } else {
+                    camera.fov += event.deltaY * 0.05;
+                    camera.fov = Math.max(30, Math.min(120, camera.fov));
+                    camera.updateProjectionMatrix();
+                }
+            });
+            
+            const yearSlider = document.getElementById('yearSlider');
+            const yearFloaterSlider = document.getElementById('yearFloaterSlider');
+            
+            const updateYear = (value) => {
+                currentYear = parseInt(value);
+                document.getElementById('currentYear').textContent = currentYear;
+                document.getElementById('floaterYear').textContent = currentYear;
+                yearSlider.value = currentYear;
+                yearFloaterSlider.value = currentYear;
+                
+                const years = Object.keys(populationData).map(y => parseInt(y));
+                const nearestYear = years.reduce((prev, curr) => 
+                    Math.abs(curr - currentYear) < Math.abs(prev - currentYear) ? curr : prev
+                );
+                
+                updatePresetRates();
+                
+                createPeople();
+                updateSkyColor();
+                
+                const progress = (currentYear - 1960) / (2070 - 1960);
+                const gradientColor = `linear-gradient(90deg, 
+                    rgba(16, 185, 129, ${1 - progress}) 0%, 
+                    rgba(239, 68, 68, ${progress}) 100%)`;
+                yearSlider.style.background = gradientColor;
+                yearFloaterSlider.style.background = gradientColor;
+                
+                if (currentYear % 20 === 0 && !isFormationMode) {
+                    createBuildings();
+                    createTrees();
+                }
+                
+                if (isFormationMode && !formationAnimating) {
+                    createFormation();
+                }
+            };
+            
+            yearSlider.addEventListener('input', (event) => updateYear(event.target.value));
+            yearFloaterSlider.addEventListener('input', (event) => updateYear(event.target.value));
+            
+            document.getElementById('speedSlider').addEventListener('input', (event) => {
+                animationSpeed = parseFloat(event.target.value);
+            });
+            
+            const playBtn = document.getElementById('playBtn');
+            const floaterPlayBtn = document.getElementById('floaterPlayBtn');
+            
+            const togglePlay = () => {
+                if (isPlaying) {
+                    isPlaying = false;
+                    playBtn.classList.remove('playing');
+                    floaterPlayBtn.classList.remove('playing');
+                    playBtn.innerHTML = '▶';
+                    floaterPlayBtn.innerHTML = '▶';
+                    playBtn.title = 'Auto Play';
+                    floaterPlayBtn.title = 'Auto Play';
+                    if (playInterval) {
+                        clearInterval(playInterval);
+                        playInterval = null;
+                    }
+                } else {
+                    isPlaying = true;
+                    playBtn.classList.add('playing');
+                    floaterPlayBtn.classList.add('playing');
+                    playBtn.innerHTML = '❚❚';
+                    floaterPlayBtn.innerHTML = '❚❚';
+                    playBtn.title = 'Pause';
+                    floaterPlayBtn.title = 'Pause';
+                    
+                    playInterval = setInterval(() => {
+                        let nextYear = currentYear + 5;
+                        if (nextYear > 2070) {
+                            nextYear = 1960;
+                        }
+                        updateYear(nextYear);
+                    }, 2000);
+                }
+            };
+            
+            playBtn.addEventListener('click', togglePlay);
+            floaterPlayBtn.addEventListener('click', togglePlay);
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    fertilityScenario = btn.dataset.scenario;
+                    
+                    if (fertilityScenario === 'current') {
+                        const nearestYear = Object.keys(populationData).reduce((prev, curr) => 
+                            Math.abs(parseInt(curr) - currentYear) < Math.abs(parseInt(prev) - currentYear) ? curr : prev
+                        );
+                        currentFertilityRate = populationData[nearestYear].fertilityRate;
+                    } else if (fertilityScenario === 'replacement') {
+                        currentFertilityRate = 2.1;
+                    } else if (fertilityScenario === 'high') {
+                        currentFertilityRate = 3.0;
+                    }
+                    
+                    updateDisplay();
+                    createPeople();
+                });
+            });
+            
+            const updatePresetRates = () => {
+                const nearestYear = Object.keys(populationData).reduce((prev, curr) => 
+                    Math.abs(parseInt(curr) - currentYear) < Math.abs(parseInt(prev) - currentYear) ? curr : prev
+                );
+                const currentBtn = document.getElementById('currentPresetRate');
+                if (currentBtn) {
+                    currentBtn.textContent = populationData[nearestYear].fertilityRate.toFixed(1);
+                }
+                
+                if (fertilityScenario === 'current') {
+                    currentFertilityRate = populationData[nearestYear].fertilityRate;
+                    updateDisplay();
+                }
+            };
+            
+            document.getElementById('fertilitySlider').addEventListener('input', (event) => {
+                currentFertilityRate = parseFloat(event.target.value);
+                fertilityScenario = 'custom';
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                updateDisplay();
+                createPeople();
+                
+                const percentage = ((currentFertilityRate - 0.5) / (4.0 - 0.5)) * 100;
+                document.getElementById('fertilitySliderFill').style.width = percentage + '%';
+            });
+        }
+
+        function createFallingLeaves() {
+            if (currentYear < 2030 || Math.random() > 0.02) return;
+            
+            const leafColors = [0xFF4500, 0xFF8C00, 0xFFD700, 0x8B4513];
+            const leafColor = leafColors[Math.floor(Math.random() * leafColors.length)];
+            
+            const leafGeometry = new THREE.PlaneGeometry(0.3, 0.4);
+            const leafMaterial = new THREE.MeshLambertMaterial({ 
+                color: leafColor, 
+                transparent: true, 
+                opacity: 0.8,
+                side: THREE.DoubleSide 
+            });
+            const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+            
+            if (trees.length > 0) {
+                const tree = trees[Math.floor(Math.random() * trees.length)];
+                leaf.position.set(
+                    tree.position.x + (Math.random() - 0.5) * 6,
+                    8 + Math.random() * 4,
+                    tree.position.z + (Math.random() - 0.5) * 6
+                );
+                
+                leaf.userData = {
+                    fallSpeed: 0.02 + Math.random() * 0.03,
+                    swayAmount: Math.random() * 0.5,
+                    swaySpeed: Math.random() * 0.002,
+                    rotationSpeed: (Math.random() - 0.5) * 0.1
+                };
+                
+                fallingLeaves.push(leaf);
+                scene.add(leaf);
+            }
+        }
+
+        function updateFallingLeaves() {
+            fallingLeaves = fallingLeaves.filter(leaf => {
+                leaf.position.y -= leaf.userData.fallSpeed * animationSpeed;
+                leaf.position.x += Math.sin(time * leaf.userData.swaySpeed) * leaf.userData.swayAmount;
+                leaf.rotation.z += leaf.userData.rotationSpeed * animationSpeed;
+                leaf.rotation.y += 0.01 * animationSpeed;
+                
+                if (leaf.position.y < 0) {
+                    scene.remove(leaf);
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function createFormation() {
+            const groups = {
+                baby: people.filter(p => p.userData.ageGroup === 'baby'),
+                child: people.filter(p => p.userData.ageGroup === 'child'),
+                young: people.filter(p => p.userData.ageGroup === 'young'),
+                middle: people.filter(p => p.userData.ageGroup === 'middle'),
+                elderly: people.filter(p => p.userData.ageGroup === 'elderly')
+            };
+            
+            const barSpacing = 8;
+            const personSpacing = 1.2;
+            const startX = -25;
+            const baseZ = 10;
+            
+            let currentX = startX;
+            
+            groupInfoBubbles.forEach(bubble => {
+                if (bubble.element && bubble.element.parentNode) {
+                    bubble.element.parentNode.removeChild(bubble.element);
+                }
+            });
+            groupInfoBubbles = [];
+            
+            const groupNames = {
+                baby: 'Babies',
+                child: 'Children',
+                young: 'Youth',
+                middle: 'Adults',
+                elderly: 'Elderly'
+            };
+            
+            ['baby', 'child', 'young', 'middle', 'elderly'].forEach((ageGroup, groupIndex) => {
+                const group = groups[ageGroup];
+                
+                group.forEach((person, index) => {
+                    const targetX = currentX;
+                    const targetZ = baseZ - (index * personSpacing);
+                    
+                    if (person.position.x === 0 && person.position.z === 0) {
+                        person.position.set(targetX, 0, targetZ);
+                        person.userData.formationProgress = 1;
+                    } else {
+                        if (!person.userData.originalPosition) {
+                            person.userData.originalPosition = person.position.clone();
+                        }
+                    }
+                    
+                    person.userData.formationPosition = new THREE.Vector3(targetX, 0, targetZ);
+                    if (person.userData.formationProgress === undefined) {
+                        person.userData.formationProgress = 0;
+                    }
+                    
+                    person.userData.isWalkingOnPath = false;
+                    
+                    person.userData.isLastInGroup = (index === group.length - 1);
+                    person.userData.groupName = groupNames[ageGroup];
+                    person.userData.groupCount = group.length;
+                });
+                
+                currentX += barSpacing;
+            });
+        }
+        
+        function disperseFormation() {
+            people.forEach(person => {
+                person.userData.formationPosition = null;
+                person.userData.formationProgress = 0;
+                person.userData.isWalkingOnPath = Math.random() < 0.6;
+                person.userData.direction = Math.random() * Math.PI * 2;
+                person.userData.isLastInGroup = false;
+            });
+            
+            groupInfoBubbles.forEach(bubble => {
+                if (bubble.element && bubble.element.parentNode) {
+                    bubble.element.parentNode.removeChild(bubble.element);
+                }
+            });
+            groupInfoBubbles = [];
+        }
+        
+        function updateGroupInfoBubbles() {
+            people.forEach(person => {
+                if (person.userData.isLastInGroup && isFormationMode && person.userData.formationProgress > 0.95) {
+                    let bubble = groupInfoBubbles.find(b => b.person === person);
+                    
+                    if (!bubble) {
+                        const element = document.createElement('div');
+                        element.className = `group-info-bubble ${person.userData.ageGroup}`;
+                        
+                        const totalPeople = people.length;
+                        const percentage = ((person.userData.groupCount / totalPeople) * 100).toFixed(1);
+                        
+                        element.innerHTML = `
+                            <div class="group-name">${person.userData.groupName}</div>
+                            <div class="group-stats">${person.userData.groupCount} people (${percentage}%)</div>
+                        `;
+                        
+                        document.body.appendChild(element);
+                        bubble = { element, person };
+                        groupInfoBubbles.push(bubble);
+                    }
+                    
+                    const bubblePosition = new THREE.Vector3(
+                        person.position.x,
+                        person.position.y + person.userData.bodyHeight + person.userData.headSize + 1.5,
+                        person.position.z
+                    );
+                    
+                    bubblePosition.project(camera);
+                    
+                    const x = (bubblePosition.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (bubblePosition.y * -0.5 + 0.5) * window.innerHeight;
+                    
+                    if (bubblePosition.z < 1 && x >= 0 && x <= window.innerWidth && y >= 0 && y <= window.innerHeight) {
+                        bubble.element.style.left = (x - 45) + 'px';
+                        bubble.element.style.top = (y - 60) + 'px';
+                        bubble.element.style.display = 'block';
+                    } else {
+                        bubble.element.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            time += delta;
+            
+            moveSpeed = keys.shift ? 0.15 : 0.05;
+            
+            if (keys.space && !isJumping && currentView !== 'bird') {
+                isJumping = true;
+                jumpVelocity = jumpPower;
+            }
+            
+            if (currentView !== 'bird') {
+                const moveVector = new THREE.Vector3();
+                const forward = new THREE.Vector3(0, 0, -1);
+                const right = new THREE.Vector3(1, 0, 0);
+                
+                forward.applyQuaternion(camera.quaternion);
+                right.applyQuaternion(camera.quaternion);
+                
+                if (keys.w) moveVector.add(forward.multiplyScalar(moveSpeed));
+                if (keys.s) moveVector.add(forward.multiplyScalar(-moveSpeed));
+                if (keys.a) moveVector.add(right.multiplyScalar(-moveSpeed));
+                if (keys.d) moveVector.add(right.multiplyScalar(moveSpeed));
+                
+                const newPosition = camera.position.clone().add(moveVector);
+                
+                if (Math.abs(newPosition.x) < 40 && Math.abs(newPosition.z) < 40) {
+                    camera.position.copy(newPosition);
+                    
+                    let baseHeight = currentView === 'child' ? 1.2 : 1.7;
+                    
+                    if (isJumping) {
+                        jumpVelocity += gravity;
+                        baseHeight += jumpVelocity;
+                        
+                        if (baseHeight <= (currentView === 'child' ? 1.2 : 1.7)) {
+                            baseHeight = currentView === 'child' ? 1.2 : 1.7;
+                            isJumping = false;
+                            jumpVelocity = 0;
+                        }
+                    }
+                    
+                    if (currentView === 'child' && !isJumping) {
+                        baseHeight += Math.sin(time * 2) * 0.02;
+                    }
+                    
+                    camera.position.y = baseHeight;
+                }
+            } else {
+                if (keys.w) camera.position.z -= moveSpeed * 2;
+                if (keys.s) camera.position.z += moveSpeed * 2;
+                if (keys.a) camera.position.x -= moveSpeed * 2;
+                if (keys.d) camera.position.x += moveSpeed * 2;
+                camera.lookAt(0, 0, 0);
+            }
+            
+            people.forEach(person => {
+                const userData = person.userData;
+                
+                if (isFormationMode && userData.formationPosition) {
+                    if (userData.formationProgress < 1) {
+                        userData.formationProgress = Math.min(1, userData.formationProgress + 0.008 * animationSpeed);
+                        
+                        const t = userData.formationProgress;
+                        const easeProgress = t < 0.5 
+                            ? 2 * t * t 
+                            : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                        
+                        person.position.lerpVectors(
+                            userData.originalPosition,
+                            userData.formationPosition,
+                            easeProgress
+                        );
+                        
+                        const targetRotation = Math.PI;
+                        person.rotation.y = person.rotation.y + (targetRotation - person.rotation.y) * 0.1;
+                        
+                        if (userData.walkSpeed > 0 && !userData.hasAssistiveDevice) {
+                            userData.animationTime += userData.walkSpeed * animationSpeed * 8;
+                            
+                            person.rotation.y = Math.PI + Math.sin(userData.animationTime) * 0.1;
+                            person.position.y = Math.abs(Math.sin(userData.animationTime * 2)) * 0.05;
+                            
+                            const legs = person.children.filter(child => 
+                                child.position.y < userData.bodyHeight * 0.3
+                            );
+                            legs.forEach((leg, index) => {
+                                const phase = index === 0 ? 0 : Math.PI;
+                                leg.rotation.x = Math.sin(userData.animationTime + phase) * 0.4;
+                            });
+                            
+                            const arms = person.children.filter(child => 
+                                Math.abs(child.position.x) > userData.headSize && 
+                                child.position.y > userData.bodyHeight * 0.3
+                            );
+                            arms.forEach((arm, index) => {
+                                const phase = index === 0 ? 0 : Math.PI;
+                                arm.rotation.x = Math.sin(userData.animationTime + phase) * 0.3;
+                            });
+                        }
+                    } else {
+                        person.position.y = Math.sin(time * 2 + person.position.x) * 0.02;
+                    }
+                } else if (!isFormationMode && userData.formationProgress > 0) {
+                    userData.formationProgress = Math.max(0, userData.formationProgress - 0.008 * animationSpeed);
+                    
+                    if (userData.formationProgress > 0) {
+                        const t = userData.formationProgress;
+                        const easeProgress = t < 0.5 
+                            ? 2 * t * t 
+                            : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                        
+                        const walkX = userData.originalPosition.x + Math.cos(userData.direction) * userData.walkSpeed * time * 20;
+                        const walkZ = userData.originalPosition.z + Math.sin(userData.direction) * userData.walkSpeed * time * 20;
+                        const currentWalkPosition = new THREE.Vector3(walkX, 0, walkZ);
+                        
+                        person.position.lerpVectors(
+                            currentWalkPosition,
+                            userData.formationPosition,
+                            easeProgress
+                        );
+                    } else {
+                        userData.originalPosition = person.position.clone();
+                    }
+                } else if (!isFormationMode) {
+                    userData.animationTime += userData.walkSpeed * animationSpeed * 5;
+                    
+                    if (userData.ageGroup === 'baby' && userData.parentPerson) {
+                        const parent = userData.parentPerson;
+                        const targetX = parent.position.x + (Math.random() - 0.5) * 3;
+                        const targetZ = parent.position.z + (Math.random() - 0.5) * 3;
+                        
+                        const dx = targetX - person.position.x;
+                        const dz = targetZ - person.position.z;
+                        const distance = Math.sqrt(dx * dx + dz * dz);
+                        
+                        if (distance > 2) {
+                            const moveDistance = userData.walkSpeed * animationSpeed * 2;
+                            person.position.x += (dx / distance) * moveDistance;
+                            person.position.z += (dz / distance) * moveDistance;
+                            userData.direction = Math.atan2(dz, dx);
+                        }
+                    } else {
+                        const moveDistance = userData.walkSpeed * animationSpeed;
+                        
+                        if (userData.isWalkingOnPath) {
+                            if (Math.abs(person.position.x) < 4) {
+                                if (Math.abs(userData.direction - Math.PI/2) > Math.PI/4 && 
+                                    Math.abs(userData.direction - 3*Math.PI/2) > Math.PI/4) {
+                                    userData.direction = Math.random() < 0.5 ? Math.PI/2 : 3*Math.PI/2;
+                                }
+                            }
+                        }
+                        
+                        person.position.x += Math.cos(userData.direction) * moveDistance;
+                        person.position.z += Math.sin(userData.direction) * moveDistance;
+                    }
+                    
+                    if (userData.walkSpeed > 0 && !userData.hasAssistiveDevice) {
+                        person.rotation.y = Math.sin(userData.animationTime) * 0.1;
+                        person.position.y = Math.abs(Math.sin(userData.animationTime * 2)) * 0.03;
+                        
+                        const legs = person.children.filter(child => 
+                            child.position.y < userData.bodyHeight * 0.3
+                        );
+                        legs.forEach((leg, index) => {
+                            const phase = index === 0 ? 0 : Math.PI;
+                            leg.rotation.x = Math.sin(userData.animationTime + phase) * 0.3;
+                        });
+                        
+                        const arms = person.children.filter(child => 
+                            Math.abs(child.position.x) > userData.headSize && 
+                            child.position.y > userData.bodyHeight * 0.3
+                        );
+                        arms.forEach((arm, index) => {
+                            const phase = index === 0 ? 0 : Math.PI;
+                            arm.rotation.x = Math.sin(userData.animationTime + phase) * 0.2;
+                        });
+                    }
+                    
+                    const dist = Math.sqrt(person.position.x ** 2 + person.position.z ** 2);
+                    if (dist > 35) {
+                        userData.direction += Math.PI + (Math.random() - 0.5) * Math.PI * 0.5;
+                    }
+                    
+                    if (Math.random() < 0.005) {
+                        userData.direction += (Math.random() - 0.5) * Math.PI * 0.5;
+                    }
+                    
+                    person.rotation.y = userData.direction + Math.PI / 2;
+                    
+                    people.forEach(other => {
+                        if (other !== person) {
+                            const distance = person.position.distanceTo(other.position);
+                            if (distance < 1.5) {
+                                const avoidAngle = Math.atan2(
+                                    person.position.z - other.position.z,
+                                    person.position.x - other.position.x
+                                );
+                                person.position.x += Math.cos(avoidAngle) * 0.05;
+                                person.position.z += Math.sin(avoidAngle) * 0.05;
+                            }
+                        }
+                    });
+                }
+            });
+            
+            createFallingLeaves();
+            updateFallingLeaves();
+            
+            updateAgeLabels();
+            updateGroupInfoBubbles();
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('load', init);
+
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+    
+            if (data.type === 'configure') {
+                const config = data.config;
+        
+                if (config.year) {
+                    currentYear = config.year;
+                    document.getElementById('yearSlider').value = config.year;
+                    updateDisplay();
+                    createPeople();
+                    createBuildings();
+                    createTrees();
+                }
+        
+                if (config.view) {
+                    setView(config.view);
+                    document.querySelectorAll('.view-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    document.querySelector(`[data-view="${config.view}"]`)?.classList.add('active');
+                }
+        
+                const controls = document.getElementById('controls');
+                const stats = document.getElementById('stats');
+                const agePanel = document.getElementById('ageDistribution');
+        
+                if (config.showControls) {
+                    controls.style.display = 'block';
+                    stats.style.display = 'block';
+                    if (agePanel) agePanel.classList.add('active');
+                } else {
+                    controls.style.display = 'none';
+                    stats.style.display = 'none';
+                    if (agePanel) agePanel.classList.remove('active');
+                }
+        
+                if (config.showFertilityControls) {
+                    if (controls.classList.contains('collapsed')) {
+                        document.getElementById('toggleButton').click();
+                    }
+                    document.querySelector('.fertility-controls')?.scrollIntoView();
+
+                     if (config.showFertilityHint) {
+                        setTimeout(() => {
+                            const fertilitySlider = document.getElementById('fertilitySlider');
+                            const fertilityControls = document.querySelector('.fertility-controls');
+                                        
+                            if (fertilitySlider && fertilityControls) {
+                                fertilityControls.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                        
+                                setTimeout(() => {
+                                    const rect = fertilitySlider.getBoundingClientRect();
+                                    window.parent.postMessage({
+                                        type: 'fertilitySliderPosition',
+                                        position: {
+                                            top: rect.top,
+                                            left: rect.left + rect.width / 2,
+                                            width: rect.width,
+                                            height: rect.height
+                                        }
+                                    }, '*');
+                                }, 500);
+                            }
+                        }, 1000);
+                    }
+                }
+        
+                if (config.formation && !isFormationMode) {
+                    setTimeout(() => {
+                        document.getElementById('formationBtn').click();
+                    }, 1000);
+                }
+        
+                if (config.highlightElderly) {
+                    highlightedAgeGroup = 'elderly';
+                    updateAgeLabels();
+                } else {
+                    highlightedAgeGroup = null;
+                    updateAgeLabels();
+                }
+        
+                if (config.autoPlay) {
+                    if (!isPlaying) {
+                        document.getElementById('playBtn').click();
+                    }
+                }
+            }
+    
+            if (data.type === 'exit') {
+                if (isPlaying) {
+                    document.getElementById('playBtn').click();
+                }
+                if (isFormationMode) {
+                    document.getElementById('formationBtn').click();
+                }
+                highlightedAgeGroup = null;
+                updateAgeLabels();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const agePanel = document.getElementById('ageDistribution');
+            if (agePanel) {
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'panel-close';
+                closeBtn.innerHTML = '×';
+                closeBtn.onclick = () => agePanel.classList.remove('active');
+                agePanel.insertBefore(closeBtn, agePanel.firstChild);
+
+                // This is the fix: make it visible by default
+                agePanel.classList.add('active');
+            }
+
+            const toggleBtn = document.getElementById('toggleAgeDistPanelBtn');
+    if (agePanel && toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            agePanel.classList.toggle('active');
+        });
+    }
+            
+            if (agePanel) {
+        agePanel.classList.add('active');
+    }
+
+            const originalUpdateDisplay = updateDisplay;
+            updateDisplay = function() {
+                originalUpdateDisplay();
+        
+                const years = Object.keys(populationData).map(y => parseInt(y));
+                const nearestYear = years.reduce((prev, curr) => 
+                    Math.abs(curr - currentYear) < Math.abs(prev - currentYear) ? curr : prev
+                );
+                const data = populationData[nearestYear];
+        
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'populationUpdate',
+                        population: data
+                    }, '*');
+                }
+            };
+        
+            if (window.parent !== window) {
+                document.getElementById('controls').style.display = 'none';
+                document.getElementById('stats').style.display = 'none';
+                document.getElementById('instructions').style.display = 'none';
+                document.getElementById('speedControl').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

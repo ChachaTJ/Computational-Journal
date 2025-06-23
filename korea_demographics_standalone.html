@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korea Aging Demographics 3D Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            color: #2c3e50;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 16px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #7f8c8d;
+            max-width: 500px;
+        }
+
+        .character-info {
+            position: absolute;
+            top: 120px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            min-width: 280px;
+            max-width: 320px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .character-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .character-age {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .character-story {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #34495e;
+            margin-bottom: 8px;
+        }
+
+        .character-type {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            color: white;
+        }
+
+        .character-elderly {
+            background: #e74c3c;
+        }
+
+        .character-working {
+            background: #3498db;
+        }
+
+        .character-child {
+            background: #27ae60;
+        }
+
+        .character-supporter {
+            background: #f39c12;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .controls-compact {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .year-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+
+        .year-display {
+            background: rgba(102, 126, 234, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #2c3e50;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 16px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .year-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #3498db, #e74c3c);
+            outline: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .year-slider:hover {
+            opacity: 1;
+        }
+
+        .year-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2c3e50;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #2c3e50;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.5);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .view-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .view-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #2c3e50;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .view-btn.active {
+            background: rgba(102, 126, 234, 0.4);
+            border-color: rgba(102, 126, 234, 0.6);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card {
+            background: rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #2c3e50;
+            padding: 6px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .burden-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .burden-bar {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .burden-fill {
+            height: 100%;
+            background: linear-gradient(to right, #27ae60, #f39c12, #e74c3c);
+            transition: width 0.8s ease;
+            border-radius: 4px;
+        }
+
+        .platform-info {
+            font-size: 10px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .instructions {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            max-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .instructions h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .instructions ul {
+            margin-left: 16px;
+            margin-bottom: 12px;
+        }
+
+        .instructions li {
+            margin-bottom: 4px;
+            color: #34495e;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>🇰🇷 Korea Demographic Aging Visualization</h1>
+        <p>Interactive 3D visualization of Korea's demographic transition from 1960 to 2072</p>
+    </div>
+
+    <!-- Character Info Display -->
+    <div class="character-info" id="characterInfo">
+        <div class="character-name" id="characterName">Kim Young-soo</div>
+        <div class="character-age" id="characterAge">72 years old</div>
+        <div class="character-story" id="characterStory">Korean War veteran. Grandfather of 3 grandchildren</div>
+        <div class="character-type character-elderly" id="characterType">👴 Elderly</div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h3>🎮 Controls</h3>
+        <ul>
+            <li><strong>WASD:</strong> Move camera</li>
+            <li><strong>Mouse:</strong> Rotate view</li>
+            <li><strong>Hover:</strong> Character info</li>
+            <li><strong>Slider:</strong> Change year</li>
+        </ul>
+        
+        <h3>📊 Key Data</h3>
+        <ul>
+            <li><strong>Black hair:</strong> Children (0-14)</li>
+            <li><strong>White hair:</strong> Elderly (65+)</li>
+            <li><strong>2070:</strong> 117% burden ratio</li>
+            <li><strong>80+:</strong> Reaches 21.8% by 2070</li>
+        </ul>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="controls-compact">
+            <!-- Year Control -->
+            <div class="year-control">
+                <span class="year-display" id="currentYear">2025</span>
+                <input type="range" id="yearSlider" class="year-slider" 
+                       min="1960" max="2072" step="1" value="2025"
+                       oninput="updateYear(parseInt(this.value))">
+                <button onclick="togglePlay()" id="playButton">▶</button>
+                <button onclick="resetToStart()">🔄</button>
+            </div>
+
+            <!-- Camera View Control -->
+            <div class="view-control">
+                <span style="font-size: 11px; font-weight: bold;">View:</span>
+                <button onclick="setView('front')" id="frontView" class="view-btn active">Front</button>
+                <button onclick="setView('top')" id="topView" class="view-btn">Top</button>
+                <button onclick="setView('rotate')" id="rotateView" class="view-btn">Rotate</button>
+            </div>
+
+            <!-- Stats Display -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Children</div>
+                    <div class="stat-value" id="childPop">3,755</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Elderly</div>
+                    <div class="stat-value" id="elderlyPop">10,514</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Support Ratio</div>
+                    <div class="stat-value" id="supportRatio">2.80</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">80+</div>
+                    <div class="stat-value" id="eightyPlus">4.8%</div>
+                </div>
+            </div>
+
+            <!-- Burden Indicator -->
+            <div class="burden-indicator">
+                <span style="font-size: 12px; font-weight: bold;">Burden</span>
+                <div class="burden-bar">
+                    <div class="burden-fill" id="burdenFill" style="width: 45%;"></div>
+                </div>
+                <span style="font-size: 12px; font-weight: bold;" id="burdenValue">45%</span>
+            </div>
+
+            <div class="platform-info" id="platformInfo">Platform: 15 children + 35 elderly = 50 total</div>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, platform;
+        let supporters = [];
+        let elderly = [];
+        let selectedYear = 2025;
+        let isPlaying = false;
+        let animationId;
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let hoveredCharacter = null;
+
+        // Camera control variables
+        let cameraPosition = { x: 0, y: 6, z: 20 };
+        let cameraRotation = { x: 0, y: 0 };
+        let keys = {};
+        let isMouseDown = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        
+        // Camera view modes
+        let currentViewMode = 'front';
+        let rotationSpeed = 0.01;
+        let rotationAngle = 0;
+
+        // Korean demographic data - Complete dataset
+        let koreaData = {
+            "1960": {"supportRatio": 0.053, "eightyPlusShare": 0.2, "elderlyPop": 726, "burden": 82.6, "childPopulation": 10588000, "workingPopulation": 13698000, "elderlyPopulation": 726000, "eightyPlusPopulation": 59000, "elderlyPercentage": 2.9, "eightyPlusPercentage": 0.2, "childPercentage": 42.3},
+            "1980": {"supportRatio": 0.061, "eightyPlusShare": 0.5, "elderlyPop": 1456, "burden": 60.7, "childPopulation": 12951000, "workingPopulation": 23717000, "elderlyPopulation": 1456000, "eightyPlusPopulation": 178000, "elderlyPercentage": 3.8, "eightyPlusPercentage": 0.5, "childPercentage": 34.0},
+            "2000": {"supportRatio": 0.101, "eightyPlusShare": 1.0, "elderlyPop": 3395, "burden": 39.5, "childPopulation": 9911000, "workingPopulation": 33702000, "elderlyPopulation": 3395000, "eightyPlusPopulation": 483000, "elderlyPercentage": 7.2, "eightyPlusPercentage": 1.0, "childPercentage": 21.1},
+            "2020": {"supportRatio": 0.218, "eightyPlusShare": 3.6, "elderlyPop": 8152, "burden": 38.7, "childPopulation": 6306000, "workingPopulation": 37379000, "elderlyPopulation": 8152000, "eightyPlusPopulation": 1891000, "elderlyPercentage": 15.7, "eightyPlusPercentage": 3.6, "childPercentage": 12.2},
+            "2025": {"supportRatio": 0.293, "eightyPlusShare": 4.8, "elderlyPop": 10514, "burden": 45.5, "childPopulation": 5258000, "workingPopulation": 35912000, "elderlyPopulation": 10514000, "eightyPlusPopulation": 2478000, "elderlyPercentage": 20.3, "eightyPlusPercentage": 4.8, "childPercentage": 10.2},
+            "2030": {"supportRatio": 0.401, "eightyPlusShare": 6.2, "elderlyPop": 13418, "burden": 55.1, "childPopulation": 4160000, "workingPopulation": 34166000, "elderlyPopulation": 13418000, "eightyPlusPopulation": 3161000, "elderlyPercentage": 26.2, "eightyPlusPercentage": 6.2, "childPercentage": 8.1},
+            "2040": {"supportRatio": 0.591, "eightyPlusShare": 10.7, "elderlyPop": 17151, "burden": 72.4, "childPopulation": 3879000, "workingPopulation": 29029000, "elderlyPopulation": 17151000, "eightyPlusPopulation": 5331000, "elderlyPercentage": 34.3, "eightyPlusPercentage": 10.7, "childPercentage": 7.7},
+            "2050": {"supportRatio": 0.773, "eightyPlusShare": 15.8, "elderlyPop": 18908, "burden": 93.2, "childPopulation": 3751000, "workingPopulation": 24448000, "elderlyPopulation": 18908000, "eightyPlusPopulation": 7866000, "elderlyPercentage": 40.1, "eightyPlusPercentage": 15.8, "childPercentage": 8.0},
+            "2060": {"supportRatio": 0.903, "eightyPlusShare": 19.9, "elderlyPop": 18682, "burden": 104.5, "childPopulation": 2933000, "workingPopulation": 20687000, "elderlyPopulation": 18682000, "eightyPlusPopulation": 8422000, "elderlyPercentage": 44.2, "eightyPlusPercentage": 19.9, "childPercentage": 6.9},
+            "2070": {"supportRatio": 1.033, "eightyPlusShare": 21.8, "elderlyPop": 17677, "burden": 117.3, "childPopulation": 2393000, "workingPopulation": 17111000, "elderlyPopulation": 17677000, "eightyPlusPopulation": 8112000, "elderlyPercentage": 47.5, "eightyPlusPercentage": 21.8, "childPercentage": 6.4}
+        };
+
+        // Character lifecycle tracking
+        let characterLifecycles = [];
+        let nextCharacterId = 0;
+
+        function createNewCharacter(type, currentYear, index) {
+            const elderlyNames = ['Kim Young-soo', 'Park Soon-ja', 'Lee Jung-hee', 'Choi Man-soo', 'Jung Bok-soon', 'Kang Seok-jun', 'Yoon Mi-ja', 'Han Sang-cheol', 'Cho Mi-kyung', 'Shin Dong-ho'];
+            const elderlyStories = [
+                'Korean War veteran. Grandfather of 3 grandchildren',
+                'Retired elementary school teacher with 40 years of service',
+                'Former factory worker. Raised 5 children during rapid industrialization',
+                'Traditional market vendor. Witnessed Korea\'s economic miracle',
+                'Homemaker who supported family through difficult times',
+                'Former government official. Helped build modern Korea',
+                'Retired nurse. Dedicated life to community healthcare',
+                'Ex-coal miner. Backbone of Korea\'s industrial development',
+                'Traditional craftsperson. Preserves cultural heritage',
+                'Former farmer. Lived through Korea\'s transformation'
+            ];
+
+            const childNames = ['Min-jun', 'So-yeon', 'Ji-hoon', 'Yu-na', 'Seo-jun', 'Ha-eun', 'Do-yoon', 'Ye-jin', 'Si-woo', 'Chae-won'];
+            const childStories = [
+                'Elementary student. Dreams of becoming a scientist',
+                'Middle school student. Loves K-pop and technology',
+                'High school student. Preparing for university entrance',
+                'Young child. Learning traditional Korean culture',
+                'Kindergarten student. Enjoys drawing and playing',
+                'Preschooler. Speaks both Korean and English',
+                'Talented young artist. Loves painting and music',
+                'Future engineer. Building robots with blocks',
+                'Young athlete. Dreams of Olympic gold',
+                'Bookworm. Reads stories about ancient Korea'
+            ];
+
+            const workingNames = ['Lee Min-ho', 'Kim Ji-eun', 'Park Tae-young', 'Choi Yoo-jin', 'Jung Woo-sung', 'Song Hye-kyo', 'Lim Chang-jung', 'Bae Suzy', 'Gong Yoo', 'Jun Ji-hyun'];
+            const workingJobs = ['Software Engineer', 'Teacher', 'Doctor', 'Factory Worker', 'Small Business Owner', 'Nurse', 'Designer', 'Chef', 'Construction Worker', 'Sales Manager'];
+
+            let character = {
+                id: nextCharacterId++,
+                type: type,
+                birthYear: currentYear - (type === 'elderly' ? 70 + Math.random() * 15 : 
+                                        type === 'child' ? Math.random() * 15 : 
+                                        25 + Math.random() * 40),
+                createdYear: currentYear
+            };
+
+            if (type === 'elderly') {
+                const nameIndex = index % elderlyNames.length;
+                character.name = elderlyNames[nameIndex];
+                character.story = elderlyStories[nameIndex];
+            } else if (type === 'child') {
+                const nameIndex = index % childNames.length;
+                character.name = childNames[nameIndex];
+                character.story = childStories[nameIndex];
+            } else {
+                const nameIndex = index % workingNames.length;
+                character.name = workingNames[nameIndex];
+                character.job = workingJobs[nameIndex];
+                character.story = `Working as ${character.job}. Supporting elderly family members.`;
+            }
+
+            return character;
+        }
+
+        function getCharacterByTypeAndIndex(type, index) {
+            let targetLifecycle = characterLifecycles.find(lc => lc.type === type && lc.index === index);
+            
+            if (!targetLifecycle) {
+                targetLifecycle = createNewCharacter(type, selectedYear, index);
+                targetLifecycle.index = index;
+                characterLifecycles.push(targetLifecycle);
+            }
+            
+            return targetLifecycle;
+        }
+
+        function updateCharacterLifecycles(currentYear) {
+            characterLifecycles.forEach(character => {
+                character.age = currentYear - character.birthYear;
+                
+                if (character.age < 0) character.age = 0;
+                if (character.age > 100) character.age = 100;
+                
+                if (character.age < 15) {
+                    character.type = 'child';
+                } else if (character.age >= 65) {
+                    character.type = 'elderly';
+                } else {
+                    character.type = 'working';
+                }
+            });
+        }
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f4f8);
+            scene.fog = new THREE.Fog(0xf0f4f8, 30, 100);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 6, 20);
+            camera.lookAt(0, 3, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.camera.left = -20;
+            directionalLight.shadow.camera.right = 20;
+            directionalLight.shadow.camera.top = 20;
+            directionalLight.shadow.camera.bottom = -20;
+            scene.add(directionalLight);
+
+            // Ground
+            const groundGeometry = new THREE.PlaneGeometry(30, 30);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xe0e7ed,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -3;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Platform
+            const platformGeometry = new THREE.BoxGeometry(18, 0.5, 18);
+            const platformMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x8B4513,
+                roughness: 0.8,
+                metalness: 0.1,
+                transparent: true,
+                opacity: 0.7
+            });
+            platform = new THREE.Mesh(platformGeometry, platformMaterial);
+            platform.position.y = 2;
+            platform.castShadow = true;
+            platform.receiveShadow = true;
+            scene.add(platform);
+
+            // Create supporters
+            createSupporters();
+
+            // Event listeners
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mousedown', onMouseDown);
+            window.addEventListener('mouseup', onMouseUp);
+            window.addEventListener('keydown', onKeyDown);
+            window.addEventListener('keyup', onKeyUp);
+            window.addEventListener('resize', onWindowResize);
+
+            // Initialize visualization
+            updateVisualization();
+            animate();
+        }
+
+        function createSupporters() {
+            supporters = [];
+            const supportersCount = 10;
+            const radius = 12;
+
+            for (let i = 0; i < supportersCount; i++) {
+                const angle = (i / supportersCount) * Math.PI * 2;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+
+                const supporterGroup = new THREE.Group();
+                supporterGroup.position.set(x, -1, z);
+
+                // Get character info
+                const supporterInfo = getCharacterByTypeAndIndex('working', i);
+                supporterInfo.age = selectedYear - supporterInfo.birthYear;
+                supporterGroup.userData = { characterInfo: supporterInfo };
+
+                // Body
+                const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.4, 2.0, 8);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x1a1a1a,
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                supporterGroup.add(body);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                const headMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0xfdbcb4,
+                    roughness: 0.7,
+                    metalness: 0.1
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.4;
+                supporterGroup.add(head);
+
+                // Arms
+                const armGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1.2, 8);
+                const armMaterial = new THREE.MeshStandardMaterial({ color: 0xfdbcb4 });
+
+                const leftArmGroup = new THREE.Group();
+                const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+                leftArm.position.y = -0.6;
+                leftArmGroup.add(leftArm);
+                leftArmGroup.position.set(-0.6, 0.8, 0);
+                leftArmGroup.rotation.z = -Math.PI / 6;
+                supporterGroup.add(leftArmGroup);
+
+                const rightArmGroup = new THREE.Group();
+                const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+                rightArm.position.y = -0.6;
+                rightArmGroup.add(rightArm);
+                rightArmGroup.position.set(0.6, 0.8, 0);
+                rightArmGroup.rotation.z = Math.PI / 6;
+                supporterGroup.add(rightArmGroup);
+
+                // Add random position variation
+                supporterGroup.position.x += (Math.random() - 0.5) * 0.5;
+                supporterGroup.position.z += (Math.random() - 0.5) * 0.5;
+                supporterGroup.castShadow = true;
+
+                scene.add(supporterGroup);
+                supporters.push(supporterGroup);
+            }
+        }
+
+        function updateVisualization() {
+            const data = getDataForYear(selectedYear);
+
+            // Update character lifecycles
+            updateCharacterLifecycles(selectedYear);
+
+            // Clear existing platform characters
+            elderly.forEach(character => {
+                if (character) {
+                    platform.remove(character);
+                }
+            });
+            elderly = [];
+
+            // Calculate platform population
+            const supportersCount = 10;
+            const basePopulation = Math.round(supportersCount * data.supportRatio);
+            const totalOnPlatform = Math.max(basePopulation, Math.min(Math.round(data.elderlyPop / 1000), 100));
+
+            // Calculate demographic ratios
+            const childPopulation = data.childPopulation || 5000000;
+            const elderlyPopulation = data.elderlyPopulation || 1000000;
+            const totalPopulation = childPopulation + elderlyPopulation;
+
+            const elderlyRatio = totalPopulation > 0 ? elderlyPopulation / totalPopulation : 0.1;
+            const elderlyOnPlatform = Math.max(1, Math.round(totalOnPlatform * elderlyRatio));
+            const childrenOnPlatform = totalOnPlatform - elderlyOnPlatform;
+
+            // Create platform characters
+            let childIndex = 0;
+            let elderlyIndex = 0;
+
+            for (let i = 0; i < totalOnPlatform; i++) {
+                const isElderly = i >= childrenOnPlatform;
+                const characterGroup = new THREE.Group();
+
+                // Get character info
+                const characterType = isElderly ? 'elderly' : 'child';
+                const index = isElderly ? elderlyIndex++ : childIndex++;
+                let lifecycleCharacter = getCharacterByTypeAndIndex(characterType, index + 10);
+
+                // Create character info
+                let characterInfo = {
+                    ...lifecycleCharacter,
+                    age: selectedYear - lifecycleCharacter.birthYear
+                };
+
+                characterGroup.userData = { characterInfo };
+
+                // Character scaling and positioning
+                const isElderlyChar = characterInfo.age >= 65;
+                const bodyScale = isElderlyChar ? 0.8 : 0.6;
+                const headScale = isElderlyChar ? 0.35 : 0.25;
+
+                // Body
+                const bodyGeometry = new THREE.CylinderGeometry(0.3 * bodyScale, 0.3 * bodyScale, 1.5 * bodyScale, 8);
+                const bodyColor = isElderlyChar ? 0x4a4a4a : 0x87CEEB;
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: bodyColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                characterGroup.add(body);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(headScale, 12, 12);
+                const headMaterial = new THREE.MeshStandardMaterial({ color: 0xfdbcb4 });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = isElderlyChar ? 1.0 : 0.6;
+                head.scale.setScalar(headScale);
+                characterGroup.add(head);
+
+                // Hair - BLACK for children, WHITE for elderly
+                const hairColor = isElderlyChar ? 0xffffff : 0x000000;
+                const headY = isElderlyChar ? 1.0 : 0.6;
+                const headRadius = isElderlyChar ? 0.35 : 0.25;
+                const hairSize = isElderlyChar ? 0.28 : 0.22;
+                
+                const hair = new THREE.Mesh(
+                    new THREE.SphereGeometry(hairSize, 12, 8),
+                    new THREE.MeshStandardMaterial({ 
+                        color: hairColor,
+                        roughness: 0.8,
+                        metalness: 0.1
+                    })
+                );
+                hair.position.set(0, headY + headRadius * 0.8, 0);
+                hair.scale.set(1.2, 0.7, 1.2);
+                characterGroup.add(hair);
+
+                // Walking stick for elderly
+                if (isElderlyChar) {
+                    const stickGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.2, 8);
+                    const stickMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+                    const stick = new THREE.Mesh(stickGeometry, stickMaterial);
+                    stick.position.set(0.4, 0.2, 0);
+                    stick.rotation.z = Math.PI / 12;
+                    characterGroup.add(stick);
+                }
+
+                // Position on platform
+                const gridSpacing = 1.8;
+                let posX, posZ, posY;
+
+                if (i < 25) {
+                    // 5x5 grid for first 25 characters
+                    const gridSize = 5;
+                    const row = Math.floor(i / gridSize);
+                    const col = i % gridSize;
+                    
+                    posX = (col - (gridSize - 1) / 2) * gridSpacing;
+                    posZ = (row - (gridSize - 1) / 2) * gridSpacing;
+                    posY = 2.25;
+                } else {
+                    // Spiral placement for additional characters
+                    const spiralIndex = i - 25;
+                    const spiralRadius = 5 + spiralIndex * 0.5;
+                    const angle = spiralIndex * 0.5;
+                    posX = Math.cos(angle) * spiralRadius;
+                    posZ = Math.sin(angle) * spiralRadius;
+                    posY = 2.25 + Math.floor(spiralIndex / 20) * 2.5;
+                }
+
+                characterGroup.position.set(posX, posY, posZ);
+                characterGroup.castShadow = true;
+                characterGroup.receiveShadow = true;
+
+                platform.add(characterGroup);
+                elderly.push(characterGroup);
+            }
+
+            // Update supporters based on burden
+            const burden = Math.min(data.burden / 100, 1);
+            supporters.forEach((supporter, i) => {
+                const baseY = Math.max(-1, 0 - burden * 1.5);
+                supporter.position.y = baseY + Math.sin(Date.now() * 0.001 + i) * 0.1;
+
+                // Adjust arm positions based on burden
+                const leftArmGroup = supporter.children[2];
+                const rightArmGroup = supporter.children[3];
+
+                if (leftArmGroup && rightArmGroup) {
+                    const armChangeAmount = burden * (55 * Math.PI / 180);
+                    leftArmGroup.rotation.z = (-175 * Math.PI / 180) + armChangeAmount;
+                    rightArmGroup.rotation.z = (175 * Math.PI / 180) - armChangeAmount;
+                }
+            });
+
+            // Platform instability based on burden
+            platform.rotation.x = Math.sin(Date.now() * 0.003) * burden * 0.1;
+            platform.rotation.z = Math.cos(Date.now() * 0.003) * burden * 0.1;
+
+            // Update UI
+            updateUI(data, elderlyOnPlatform, childrenOnPlatform, totalOnPlatform);
+        }
+
+        function updateUI(data, elderlyCount, childCount, totalCount) {
+            document.getElementById('currentYear').textContent = selectedYear;
+            document.getElementById('childPop').textContent = Math.round((data.childPopulation || 5000000) / 1000).toLocaleString();
+            document.getElementById('elderlyPop').textContent = Math.round((data.elderlyPopulation || data.elderlyPop * 1000) / 1000).toLocaleString();
+            document.getElementById('supportRatio').textContent = data.supportRatio.toFixed(2);
+            document.getElementById('eightyPlus').textContent = (data.eightyPlusPercentage || data.eightyPlusShare || 0).toFixed(1) + '%';
+            document.getElementById('burdenValue').textContent = Math.round(data.burden) + '%';
+            document.getElementById('burdenFill').style.width = Math.min(data.burden, 100) + '%';
+            document.getElementById('platformInfo').textContent = `Platform: ${childCount} children + ${elderlyCount} elderly = ${totalCount} total`;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // Handle different camera view modes
+            if (currentViewMode === 'rotate') {
+                rotationAngle += rotationSpeed;
+                const radius = 25;
+                camera.position.x = Math.cos(rotationAngle) * radius;
+                camera.position.z = Math.sin(rotationAngle) * radius;
+                camera.lookAt(0, 3, 0);
+            } else {
+                // Manual camera control for front and top views
+                updateCameraControls();
+            }
+
+            // Animate characters
+            elderly.forEach((character, i) => {
+                if (character) {
+                    character.position.y = character.position.y + Math.sin(time * 2 + i) * 0.05;
+
+                    if (character === hoveredCharacter) {
+                        character.scale.set(1.2, 1.2, 1.2);
+                    } else {
+                        character.scale.set(1, 1, 1);
+                    }
+                }
+            });
+
+            // Animate supporters
+            supporters.forEach((supporter, i) => {
+                if (supporter) {
+                    if (supporter === hoveredCharacter) {
+                        supporter.scale.set(1.2, 1.2, 1.2);
+                        const baseY = Math.max(-1, 0 - (koreaData[selectedYear]?.burden || 0) / 100 * 1.5);
+                        supporter.position.y = baseY + Math.sin(time * 4) * 0.2;
+                    } else {
+                        supporter.scale.set(1, 1, 1);
+                    }
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function updateCameraControls() {
+            const speed = 0.5;
+
+            // WASD camera movement
+            if (keys['KeyW']) {
+                cameraPosition.z -= Math.cos(cameraRotation.y) * speed;
+                cameraPosition.x -= Math.sin(cameraRotation.y) * speed;
+            }
+            if (keys['KeyS']) {
+                cameraPosition.z += Math.cos(cameraRotation.y) * speed;
+                cameraPosition.x += Math.sin(cameraRotation.y) * speed;
+            }
+            if (keys['KeyA']) {
+                cameraPosition.x -= Math.cos(cameraRotation.y) * speed;
+                cameraPosition.z += Math.sin(cameraRotation.y) * speed;
+            }
+            if (keys['KeyD']) {
+                cameraPosition.x += Math.cos(cameraRotation.y) * speed;
+                cameraPosition.z -= Math.sin(cameraRotation.y) * speed;
+            }
+
+            camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+            camera.rotation.x = cameraRotation.x;
+            camera.rotation.y = cameraRotation.y;
+        }
+
+        function setView(viewMode) {
+            currentViewMode = viewMode;
+            
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(viewMode + 'View').classList.add('active');
+            
+            switch(viewMode) {
+                case 'front':
+                    camera.position.set(0, 6, 20);
+                    camera.lookAt(0, 3, 0);
+                    cameraPosition.x = camera.position.x;
+                    cameraPosition.y = camera.position.y;
+                    cameraPosition.z = camera.position.z;
+                    break;
+                case 'top':
+                    camera.position.set(0, 28, 0);
+                    camera.lookAt(0, 5, 0);
+                    cameraPosition.x = camera.position.x;
+                    cameraPosition.y = camera.position.y;
+                    cameraPosition.z = camera.position.z;
+                    break;
+                case 'rotate':
+                    rotationAngle = 0;
+                    break;
+            }
+        }
+
+        function updateYear(year) {
+            selectedYear = year;
+            updateVisualization();
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const button = document.getElementById('playButton');
+            button.textContent = isPlaying ? '⏸' : '▶';
+            
+            if (isPlaying) {
+                playAnimation();
+            }
+        }
+
+        function playAnimation() {
+            if (!isPlaying) return;
+            
+            const slider = document.getElementById('yearSlider');
+            let currentValue = parseInt(slider.value);
+            
+            if (currentValue >= parseInt(slider.max)) {
+                currentValue = parseInt(slider.min);
+            } else {
+                currentValue += 1;
+            }
+            
+            slider.value = currentValue;
+            updateYear(currentValue);
+            
+            setTimeout(() => {
+                if (isPlaying) playAnimation();
+            }, 200);
+        }
+
+        function resetToStart() {
+            const slider = document.getElementById('yearSlider');
+            slider.value = slider.min;
+            updateYear(parseInt(slider.min));
+            isPlaying = false;
+            document.getElementById('playButton').textContent = '▶';
+        }
+
+        function getDataForYear(year) {
+            // Find closest year in data
+            const years = Object.keys(koreaData).map(y => parseInt(y)).sort((a, b) => a - b);
+            let closestYear = years.reduce((prev, curr) => 
+                Math.abs(curr - year) < Math.abs(prev - year) ? curr : prev
+            );
+            
+            // If exact year not found, interpolate between closest years
+            if (!koreaData[year.toString()]) {
+                const beforeYear = years.filter(y => y <= year).pop();
+                const afterYear = years.filter(y => y >= year)[0];
+                
+                if (beforeYear && afterYear && beforeYear !== afterYear) {
+                    const beforeData = koreaData[beforeYear.toString()];
+                    const afterData = koreaData[afterYear.toString()];
+                    const ratio = (year - beforeYear) / (afterYear - beforeYear);
+                    
+                    return {
+                        supportRatio: beforeData.supportRatio + (afterData.supportRatio - beforeData.supportRatio) * ratio,
+                        eightyPlusShare: beforeData.eightyPlusShare + (afterData.eightyPlusShare - beforeData.eightyPlusShare) * ratio,
+                        elderlyPop: Math.round(beforeData.elderlyPop + (afterData.elderlyPop - beforeData.elderlyPop) * ratio),
+                        burden: beforeData.burden + (afterData.burden - beforeData.burden) * ratio,
+                        childPopulation: Math.round(beforeData.childPopulation + (afterData.childPopulation - beforeData.childPopulation) * ratio),
+                        elderlyPopulation: Math.round(beforeData.elderlyPopulation + (afterData.elderlyPopulation - beforeData.elderlyPopulation) * ratio),
+                        eightyPlusPercentage: beforeData.eightyPlusPercentage + (afterData.eightyPlusPercentage - beforeData.eightyPlusPercentage) * ratio
+                    };
+                }
+            }
+            
+            return koreaData[closestYear.toString()] || {
+                supportRatio: 0.5,
+                eightyPlusShare: 5.0,
+                elderlyPop: 10000,
+                burden: 50,
+                childPopulation: 5000000,
+                elderlyPopulation: 1000000,
+                eightyPlusPercentage: 5.0
+            };
+        }
+
+        // Event handlers
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            
+            const allCharacters = [...elderly, ...supporters];
+            const intersects = raycaster.intersectObjects(allCharacters, true);
+
+            if (intersects.length > 0) {
+                let targetObject = intersects[0].object;
+                while (targetObject.parent && !targetObject.userData.characterInfo) {
+                    targetObject = targetObject.parent;
+                }
+
+                if (targetObject.userData.characterInfo && targetObject !== hoveredCharacter) {
+                    hoveredCharacter = targetObject;
+                    showCharacterInfo(targetObject.userData.characterInfo);
+                }
+            } else {
+                hoveredCharacter = null;
+                hideCharacterInfo();
+            }
+
+            // Mouse camera control
+            if (isMouseDown && currentViewMode !== 'rotate') {
+                const deltaX = event.clientX - lastMouseX;
+                const deltaY = event.clientY - lastMouseY;
+
+                cameraRotation.y -= deltaX * 0.005;
+                cameraRotation.x -= deltaY * 0.005;
+                cameraRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraRotation.x));
+            }
+
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
+        }
+
+        function onMouseDown(event) {
+            isMouseDown = true;
+        }
+
+        function onMouseUp(event) {
+            isMouseDown = false;
+        }
+
+        function onKeyDown(event) {
+            keys[event.code] = true;
+        }
+
+        function onKeyUp(event) {
+            keys[event.code] = false;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function showCharacterInfo(info) {
+            const characterInfoDiv = document.getElementById('characterInfo');
+            document.getElementById('characterName').textContent = info.name;
+            document.getElementById('characterAge').textContent = info.age + ' years old';
+            document.getElementById('characterStory').textContent = info.story;
+            
+            const typeElement = document.getElementById('characterType');
+            if (info.type === 'elderly') {
+                typeElement.textContent = '👴 Elderly';
+                typeElement.className = 'character-type character-elderly';
+            } else if (info.type === 'working') {
+                typeElement.textContent = '👷 ' + (info.job || 'Worker');
+                typeElement.className = 'character-type character-working';
+            } else if (info.type === 'child') {
+                typeElement.textContent = '👶 Child';
+                typeElement.className = 'character-type character-child';
+            }
+            
+            characterInfoDiv.style.display = 'block';
+        }
+
+        function hideCharacterInfo() {
+            document.getElementById('characterInfo').style.display = 'none';
+        }
+
+        // Initialize when page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
