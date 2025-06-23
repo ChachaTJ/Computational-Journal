@@ -622,7 +622,7 @@
         </section>
         
         <section class="section gradient-fade" data-section="1" 
-                data-sim-config='{"year": 2025, "view": "child", "autoPlay": true, "showControls": false}'>
+                data-sim-config='{"year": 2025, "view": "child", "autoPlay": false, "showControls": false}'>
             <div class="content-wrapper fade-in">
                 <div class="data-card">
                     <h2 data-ko="2025년, 평범한 하루" data-en="2025, An Ordinary Day">2025년, 평범한 하루</h2>
@@ -664,7 +664,7 @@
         </section>
         
         <section class="section gradient-fade" data-section="3" 
-                data-sim-config='{"year": 2040, "view": "bird", "showFertilityControls": true, "showControls": true}'>
+                data-sim-config='{"year": 2040, "view": "bird", "showFertilityControls": true, "showControls": true, "autoPlay": false}'>
             <div class="content-wrapper fade-in">
                 <h2 style="color: #1a1a1a;" data-ko="출산율이 만드는 두 가지 미래" data-en="Two Futures Created by Fertility Rates">출산율이 만드는 두 가지 미래</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 40px 0;">
@@ -691,7 +691,7 @@
         </section>
         
         <section class="section transparent-dark" data-section="4" 
-                data-sim-config='{"year": 2025, "view": "bird", "formation": true, "showControls": true}'>
+                data-sim-config='{"year": 2025, "view": "bird", "formation": true, "showControls": true, "autoPlay": true}'>
             <div class="content-wrapper fade-in">
                 <h2 style="text-align: center;" data-ko="연령별 인구 분포의 변화" data-en="Changes in Age Distribution">연령별 인구 분포의 변화</h2>
                 <div class="age-chart" id="ageChart">
@@ -820,16 +820,16 @@
             1: {
                 year: 2025,
                 view: 'child',
-                autoPlay: true,
+                autoPlay: false,
                 showControls: false,
-                duration: 8000,
+                duration: 10000,
                 infoTitle: {
                     ko: '2025년 서울의 거리',
                     en: 'Seoul Streets in 2025'
                 },
                 infoDesc: {
-                    ko: '아직은 균형잡힌 인구 구조를 유지하고 있습니다.',
-                    en: 'Still maintaining a balanced population structure.'
+                    ko: '아직은 균형잡힌 인구 구조를 유지하고 있습니다. 10초 동안 둘러보세요',
+                    en: 'Still maintaining a balanced population structure. Look around for 10 sec'
                 }
             },
             2: {
@@ -850,7 +850,7 @@
                 }
             },
             3: {
-                year: 2040,
+                year: 2070,
                 view: 'bird',
                 showFertilityControls: true,
                 showControls: true,
@@ -870,6 +870,7 @@
                 view: 'bird',
                 formation: true,
                 showControls: true,
+                autoplay: true,
                 duration: 10000,
                 infoTitle: {
                     ko: '연령별 인구 분포',
@@ -1029,7 +1030,7 @@
                     if (currentSection === sectionIndex && !isSimulationActive) {
                         activateSimulation({...config, ...detailedConfig});
                     }
-                }, 10000);
+                }, 6000);
             }
         }
         
